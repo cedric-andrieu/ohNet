@@ -10,6 +10,7 @@ clean :
 	$(rmdir) $(inc_build)
 	$(rmdir) $(bundle_build)
 	$(rmdir) Build/Docs
+	$(rmdir) Build
 
 mostlyclean : clean
 	$(rmdir) Generated
