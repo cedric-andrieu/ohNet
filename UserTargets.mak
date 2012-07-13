@@ -16,5 +16,7 @@ mostlyclean : clean
 	$(rmdir) Generated
 
 maintainer-clean : mostlyclean
+	$(rmdir) Build/Docs
+	$(rmdir) Build
 
 generate-makefiles : Generated$(dirsep)GenerateSourceFiles.mak Generated$(dirsep)Proxies.mak Generated$(dirsep)Devices.mak
