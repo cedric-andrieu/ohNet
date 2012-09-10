@@ -1,3 +1,5 @@
 Bindings/Cpp/ControlPoint/*.h /usr/include/ohnet/ControlPoint
+Bindings/Cpp/ControlPoint/Proxies/*.h /usr/include/ohnet/ControlPoint/Proxies
 Bindings/Cpp/Device/*.h /usr/include/ohnet/Device
+Bindings/Cpp/Device/Providers/*.h /usr/include/ohnet/Device/Providers
 
