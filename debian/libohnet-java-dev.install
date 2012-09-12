@@ -1,1 +1,4 @@
-Bindings/Java/org/openhome/net/* /usr/share/libohnet/java/
+Bindings/Java/org/openhome/net/controlpoint/*.java /usr/share/libohnet/java
+Bindings/Java/org/openhome/net/controlpoint/proxies/*.java /usr/share/libohnet/java/proxies
+Bindings/Java/org/openhome/net/device/*.java /usr/share/libohnet/java/device
+Bindings/Java/org/openhome/net/device/providers/*.java /usr/share/libohnet/java/device/providers
