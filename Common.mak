@@ -83,6 +83,7 @@ objects_core = \
 	$(objdir)Printer.$(objext) \
 	$(objdir)ProtocolUpnp.$(objext) \
 	$(objdir)Queue.$(objext) \
+	$(objdir)RefCounter.$(objext) \
 	$(objdir)Service.$(objext) \
 	$(objdir)ServiceC.$(objext) \
 	$(objdir)sha1.$(objext) \
@@ -337,6 +338,8 @@ $(objdir)ProtocolUpnp.$(objext) : OpenHome/Net/ControlPoint/Upnp/ProtocolUpnp.cp
 	$(compiler)ProtocolUpnp.$(objext) -c $(cflags) $(includes) OpenHome/Net/ControlPoint/Upnp/ProtocolUpnp.cpp
 $(objdir)Queue.$(objext) : OpenHome/Queue.cpp $(headers)
 	$(compiler)Queue.$(objext) -c $(cflags) $(includes) OpenHome/Queue.cpp
+$(objdir)RefCounter.$(objext) : OpenHome/RefCounter.cpp $(headers)
+	$(compiler)RefCounter.$(objext) -c $(cflags) $(includes) OpenHome/RefCounter.cpp
 $(objdir)Service.$(objext) : OpenHome/Net/Service.cpp $(headers)
 	$(compiler)Service.$(objext) -c $(cflags) $(includes) OpenHome/Net/Service.cpp
 $(objdir)ServiceC.$(objext) : OpenHome/Net/Bindings/C/ServiceC.cpp $(headers)
@@ -522,8 +525,6 @@ $(objdir)TestInvocation.$(objext) : OpenHome/Net/ControlPoint/Tests/TestInvocati
 	$(compiler)TestInvocation.$(objext) -c $(cflags) $(includes) OpenHome/Net/ControlPoint/Tests/TestInvocation.cpp
 $(objdir)TestInvocationMain.$(objext) : OpenHome/Net/ControlPoint/Tests/TestInvocationMain.cpp $(headers)
 	$(compiler)TestInvocationMain.$(objext) -c $(cflags) $(includes) OpenHome/Net/ControlPoint/Tests/TestInvocationMain.cpp
-$(objdir)TestBasicDvCore.$(objext) : OpenHome/Net/Device/Tests/TestBasicDv.cpp $(headers)
-	$(compiler)TestBasicDvCore.$(objext) -c $(cflags) $(includes) OpenHome/Net/Device/Tests/TestBasicDv.cpp
 
 TestInvocationStd: $(objdir)TestInvocationStd.$(exeext) 
 $(objdir)TestInvocationStd.$(exeext) :  ohNetCore $(objdir)CpUpnpOrgConnectionManager1Std.$(objext) $(objdir)TestInvocationStd.$(objext) $(libprefix)TestFramework.$(libext)
@@ -570,16 +571,16 @@ $(objdir)TestDviDeviceListMain.$(objext) : OpenHome/Net/Device/Tests/TestDviDevi
 	$(compiler)TestDviDeviceListMain.$(objext) -c $(cflags) $(includes) OpenHome/Net/Device/Tests/TestDviDeviceListMain.cpp
 
 TestDvInvocation: $(objdir)TestDvInvocation.$(exeext) 
-$(objdir)TestDvInvocation.$(exeext) :  ohNetCore $(objdir)TestDvInvocation.$(objext) $(objdir)TestDvInvocationMain.$(objext) $(objdir)TestBasicDvCore.$(objext) $(objdir)DvOpenhomeOrgTestBasic1.$(objext) $(objdir)CpOpenhomeOrgTestBasic1.$(objext) $(libprefix)TestFramework.$(libext)
-	$(link) $(linkoutput)$(objdir)TestDvInvocation.$(exeext) $(objdir)TestDvInvocationMain.$(objext) $(objdir)TestDvInvocation.$(objext) $(objdir)TestBasicDvCore.$(objext) $(objdir)DvOpenhomeOrgTestBasic1.$(objext) $(objdir)CpOpenhomeOrgTestBasic1.$(objext) $(objdir)$(libprefix)TestFramework.$(libext) $(objdir)$(libprefix)ohNetCore.$(libext)
+$(objdir)TestDvInvocation.$(exeext) :  ohNetCore $(objdir)TestDvInvocation.$(objext) $(objdir)TestDvInvocationMain.$(objext) $(objdir)DvOpenhomeOrgTestBasic1.$(objext) $(objdir)CpOpenhomeOrgTestBasic1.$(objext) $(libprefix)TestFramework.$(libext)
+	$(link) $(linkoutput)$(objdir)TestDvInvocation.$(exeext) $(objdir)TestDvInvocationMain.$(objext) $(objdir)TestDvInvocation.$(objext) $(objdir)DvOpenhomeOrgTestBasic1.$(objext) $(objdir)CpOpenhomeOrgTestBasic1.$(objext) $(objdir)$(libprefix)TestFramework.$(libext) $(objdir)$(libprefix)ohNetCore.$(libext)
 $(objdir)TestDvInvocation.$(objext) : OpenHome/Net/Device/Tests/TestDvInvocation.cpp $(headers)
 	$(compiler)TestDvInvocation.$(objext) -c $(cflags) $(includes) OpenHome/Net/Device/Tests/TestDvInvocation.cpp
 $(objdir)TestDvInvocationMain.$(objext) : OpenHome/Net/Device/Tests/TestDvInvocationMain.cpp $(headers)
 	$(compiler)TestDvInvocationMain.$(objext) -c $(cflags) $(includes) OpenHome/Net/Device/Tests/TestDvInvocationMain.cpp
 
 TestDvSubscription: $(objdir)TestDvSubscription.$(exeext) 
-$(objdir)TestDvSubscription.$(exeext) :  ohNetCore $(objdir)TestDvSubscription.$(objext) $(objdir)TestDvSubscriptionMain.$(objext) $(objdir)TestBasicDvCore.$(objext) $(objdir)DvOpenhomeOrgTestBasic1.$(objext) $(objdir)CpOpenhomeOrgTestBasic1.$(objext) $(libprefix)TestFramework.$(libext)
-	$(link) $(linkoutput)$(objdir)TestDvSubscription.$(exeext) $(objdir)TestDvSubscriptionMain.$(objext) $(objdir)TestDvSubscription.$(objext) $(objdir)TestBasicDvCore.$(objext) $(objdir)DvOpenhomeOrgTestBasic1.$(objext) $(objdir)CpOpenhomeOrgTestBasic1.$(objext) $(objdir)$(libprefix)TestFramework.$(libext) $(objdir)$(libprefix)ohNetCore.$(libext)
+$(objdir)TestDvSubscription.$(exeext) :  ohNetCore $(objdir)TestDvSubscription.$(objext) $(objdir)TestDvSubscriptionMain.$(objext) $(objdir)DvOpenhomeOrgTestBasic1.$(objext) $(objdir)CpOpenhomeOrgTestBasic1.$(objext) $(libprefix)TestFramework.$(libext)
+	$(link) $(linkoutput)$(objdir)TestDvSubscription.$(exeext) $(objdir)TestDvSubscriptionMain.$(objext) $(objdir)TestDvSubscription.$(objext) $(objdir)DvOpenhomeOrgTestBasic1.$(objext) $(objdir)CpOpenhomeOrgTestBasic1.$(objext) $(objdir)$(libprefix)TestFramework.$(libext) $(objdir)$(libprefix)ohNetCore.$(libext)
 $(objdir)TestDvSubscription.$(objext) : OpenHome/Net/Device/Tests/TestDvSubscription.cpp $(headers)
 	$(compiler)TestDvSubscription.$(objext) -c $(cflags) $(includes) OpenHome/Net/Device/Tests/TestDvSubscription.cpp
 $(objdir)TestDvSubscriptionMain.$(objext) : OpenHome/Net/Device/Tests/TestDvSubscriptionMain.cpp $(headers)
@@ -592,16 +593,10 @@ $(objdir)TestDvLights.$(objext) : OpenHome/Net/Device/Tests/TestDvLights.cpp $(h
 	$(compiler)TestDvLights.$(objext) -c $(cflags) $(includes) OpenHome/Net/Device/Tests/TestDvLights.cpp
 
 TestDvTestBasic: $(objdir)TestDvTestBasic.$(exeext) 
-$(objdir)TestDvTestBasic.$(exeext) :  ohNetCore $(objdir)TestDvTestBasic.$(objext) $(objdir)TestBasicDvCore.$(objext) $(objdir)DvOpenhomeOrgTestBasic1.$(objext) $(libprefix)TestFramework.$(libext)
-	$(link) $(linkoutput)$(objdir)TestDvTestBasic.$(exeext) $(objdir)TestDvTestBasic.$(objext) $(objdir)TestBasicDvCore.$(objext) $(objdir)DvOpenhomeOrgTestBasic1.$(objext) $(objdir)$(libprefix)TestFramework.$(libext) $(objdir)$(libprefix)ohNetCore.$(libext)
+$(objdir)TestDvTestBasic.$(exeext) :  ohNetCore $(objdir)TestDvTestBasic.$(objext) $(objdir)DvOpenhomeOrgTestBasic1.$(objext) $(libprefix)TestFramework.$(libext)
+	$(link) $(linkoutput)$(objdir)TestDvTestBasic.$(exeext) $(objdir)TestDvTestBasic.$(objext) $(objdir)DvOpenhomeOrgTestBasic1.$(objext) $(objdir)$(libprefix)TestFramework.$(libext) $(objdir)$(libprefix)ohNetCore.$(libext)
 $(objdir)TestDvTestBasic.$(objext) : OpenHome/Net/Device/Tests/TestDvTestBasic.cpp $(headers)
 	$(compiler)TestDvTestBasic.$(objext) -c $(cflags) $(includes) OpenHome/Net/Device/Tests/TestDvTestBasic.cpp
-
-TestAdapterChange: $(objdir)TestAdapterChange.$(exeext) 
-$(objdir)TestAdapterChange.$(exeext) :  ohNetCore $(objdir)TestAdapterChange.$(objext) $(objdir)TestBasicDvCore.$(objext) $(objdir)DvOpenhomeOrgTestBasic1.$(objext) $(objdir)CpOpenhomeOrgTestBasic1.$(objext) $(libprefix)TestFramework.$(libext)
-	$(link) $(linkoutput)$(objdir)TestAdapterChange.$(exeext) $(objdir)TestAdapterChange.$(objext) $(objdir)TestBasicDvCore.$(objext) $(objdir)DvOpenhomeOrgTestBasic1.$(objext) $(objdir)CpOpenhomeOrgTestBasic1.$(objext) $(objdir)$(libprefix)TestFramework.$(libext) $(objdir)$(libprefix)ohNetCore.$(libext)
-$(objdir)TestAdapterChange.$(objext) : OpenHome/Net/Device/Tests/TestAdapterChange.cpp $(headers)
-	$(compiler)TestAdapterChange.$(objext) -c $(cflags) $(includes) OpenHome/Net/Device/Tests/TestAdapterChange.cpp
 
 TestDeviceFinder: $(objdir)TestDeviceFinder.$(exeext) 
 $(objdir)TestDeviceFinder.$(exeext) :  ohNetCore $(objdir)TestDeviceFinder.$(objext) $(libprefix)TestFramework.$(libext)
@@ -699,14 +694,13 @@ tests_core = \
 	$(objdir)TestDviDeviceList.$(objext) \
 	$(objdir)TestDvInvocation.$(objext) \
 	$(objdir)TestDvSubscription.$(objext) \
-    $(objdir)TestBasicDvCore.$(objext) \
 	$(objdir)DvOpenhomeOrgTestBasic1.$(objext) \
 	$(objdir)CpOpenhomeOrgTestBasic1.$(objext)
 
 TestsCore: $(tests_core)
 	$(ar)ohNetTestsCore.$(libext) $(tests_core)
 
-TestsNative: TestBuffer TestThread TestFifo TestQueue TestTextUtils TestMulticast TestNetwork TestEcho TestTimer TestSsdpMListen TestSsdpUListen TestDeviceList TestDeviceListStd TestDeviceListC TestInvocation TestInvocationStd TestSubscription TestProxyC TestDviDiscovery TestDviDeviceList TestDvInvocation TestDvSubscription TestDvLights TestDvTestBasic TestAdapterChange TestDeviceFinder TestDvDeviceStd TestDvDeviceC TestCpDeviceDv TestCpDeviceDvStd TestCpDeviceDvC TestShell
+TestsNative: TestBuffer TestThread TestFifo TestQueue TestTextUtils TestMulticast TestNetwork TestEcho TestTimer TestSsdpMListen TestSsdpUListen TestDeviceList TestDeviceListStd TestDeviceListC TestInvocation TestInvocationStd TestSubscription TestProxyC TestDviDiscovery TestDviDeviceList TestDvInvocation TestDvSubscription TestDvLights TestDvTestBasic TestDeviceFinder TestDvDeviceStd TestDvDeviceC TestCpDeviceDv TestCpDeviceDvStd TestCpDeviceDvC TestShell
 
 TestsCs: TestProxyCs TestDvDeviceCs TestDvLightsCs TestCpDeviceDvCs TestPerformanceDv TestPerformanceCp TestPerformanceDvCs TestPerformanceCpCs
 

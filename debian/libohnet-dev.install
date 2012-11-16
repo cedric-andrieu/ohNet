@@ -1,0 +1,5 @@
+usr/include/*
+usr/lib/ohNet/libohNetCore.a /usr/lib/
+usr/lib/ohNet/libohNetProxies.a /usr/lib/
+usr/lib/ohNet/libohNetDevices.a /usr/lib/
+usr/lib/ohNet/lib*.so /usr/lib/

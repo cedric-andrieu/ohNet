@@ -1,0 +1,2 @@
+Bindings/Js/ControlPoint/lib/*.js /usr/include/ohnet/ControlPoint
+Bindings/Js/ControlPoint/Proxies/*.js /usr/include/ohnet/ControlPoint/Proxies
