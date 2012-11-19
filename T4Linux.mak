@@ -9,6 +9,7 @@ ohNetGen = mono $(toolsDir)OhNetGen.exe
 upnpServiceXml = $(toolsDir)UpnpServiceXml.dll
 upnpServiceMake = $(toolsDir)UpnpServiceMake.dll
 argumentProcessor = $(toolsDir)ArgumentProcessor.dll
+#tt = $(upnpServiceXml) $(upnpServiceMake) $(toolsDir)Mono.TextTemplating.dll $(t4) $(ohNetGen)
 tt = $(toolsDir)UpnpServiceXml.dll $(toolsDir)UpnpServiceMake.dll $(toolsDir)Mono.TextTemplating.dll $(toolsDir)TextTransform.exe $(toolsDir)OhNetGen.exe
 
 tt : $(tt)
@@ -43,7 +44,8 @@ $(toolsDir)OhNetGen.exe : $(toolsDir)TextTransform.exe OpenHome/Net/T4/OhNetGen.
 	$(mkdir) $(toolsDir)
 	dmcs /t:exe /out:$(toolsDir)OhNetGen.exe OpenHome/Net/T4/OhNetGen.cs OpenHome/Net/T4/AssemblyInfo.cs
 
-$(toolsDir)TextTransform.exe : $(toolsDir)Mono.TextTemplating.dll $(exesources)
+$(t4) : $(toolsDir)Mono.TextTemplating.dll $(exesources)
+
 	$(mkdir) $(toolsDir)
 	dmcs /t:exe -out:$(toolsDir)TextTransform.exe /r:$(toolsDir)Mono.TextTemplating.dll $(exesources)
 
