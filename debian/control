@@ -2,7 +2,7 @@ Source: libohnet
 Section: devel
 Priority: extra
 Maintainer: Cédric Andrieu <ced@opensource.wolfsonmicro.com>
-Build-Depends: debhelper (>= 8.0.0)
+Build-Depends: debhelper (>= 8.0.0), mono-dmcs, doxygen
 Standards-Version: 3.9.3
 Homepage: http://www.openhome.org/wiki/OhNet
 Vcs-git: git://github.com/openhome/ohNet.git
