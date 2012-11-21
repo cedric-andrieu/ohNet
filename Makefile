@@ -214,8 +214,9 @@ ifeq ($(MACHINE), Darwin)
 	sharedlibext = dylib
 	dllext = dylib
 else
-	sharedlibext = so.1
-	dllext = so.1
+	sharedlibext = so
+	sharedlibdevext = so.0.0.0
+	dllext = so
 endif
 exeext = elf
 linkoutput = -o 
@@ -388,7 +389,10 @@ copy_build_includes:
 	$(cp) Os/*.inl $(inc_build)/OpenHome
 
 install : install-pkgconf install-libs install-includes
-	ln -s $(installlibdir)/libohNet.so.1 $(installlibdir)/libohNet.so
+#	ln -s $(installlibdir)/libohNet.so.0 $(installlibdir)/libohNet.so
+#	ln -s $(installlibdir)/libohNet.so $(installlibdir)/libohNet.so.0.0.0
+	ln -s $(installlibdir)/libohNet.so $(installlibdir)/libohNet.so.0.0.0
+	ln -s $(installlibdir)/libohNet.so $(installlibdir)/libohNet.so.0
 
 uninstall : uninstall-pkgconf uninstall-libs uninstall-includes
 

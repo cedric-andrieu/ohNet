@@ -1,1 +1,2 @@
-usr/lib/ohNet/lib*.so.* /usr/lib/
+usr/lib/ohNet/lib*.so /usr/lib/
+usr/lib/ohNet/lib*.so.? /usr/lib/
