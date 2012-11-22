@@ -393,6 +393,7 @@ install : install-pkgconf install-libs install-includes
 #	ln -s $(installlibdir)/libohNet.so $(installlibdir)/libohNet.so.0.0.0
 	ln -s $(installlibdir)/libohNet.so $(installlibdir)/libohNet.so.0.0.0
 	ln -s $(installlibdir)/libohNet.so $(installlibdir)/libohNet.so.0
+	(ldconfig || true)  >/dev/null 2>&1; \
 
 uninstall : uninstall-pkgconf uninstall-libs uninstall-includes
 
