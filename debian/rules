@@ -6,10 +6,18 @@
 # dh-make output file, you may use that output file without restriction.
 # This special exception was added by Craig Small in version 0.37 of dh-make.
 
+#Now running lintian...
+#E: libohnet source: missing-python-build-dependency
+#W: libohnet: extra-license-file usr/share/doc/libohnet/BsdLicense.txt
+#W: libohnet: extra-license-file usr/share/doc/libohnet/License.txt
+#W: libohnet: shlib-without-versioned-soname usr/lib/libohNet.so libohNet.so
+#E: libohnet: postinst-must-call-ldconfig usr/lib/libohNet.so
+#W: libohnet-doc: empty-binary-package
+
 # Uncomment this to turn on verbose mode.
 export DH_VERBOSE=1
 export DH_OPTIONS=-v
-export DH_BUILD_OPTIONS=nocheck
+#export DH_BUILD_OPTIONS=nocheck
 
 %:
 	dh $@ 
@@ -43,4 +51,4 @@ override_dh_auto_install:
 	cp -r $(CURDIR)/Build/Docs $(CURDIR)/debian/tmp/
 
 override_dh_auto_test:
-	echo "test"
+	python AllTests.py --testsonly 
