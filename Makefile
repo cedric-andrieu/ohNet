@@ -187,7 +187,7 @@ ifeq ($(platform), Vanilla)
 	# platform == Vanilla (i.e. Kirkwood, x86 or x64)
 	platform_cflags = $(version_specific_cflags) -fPIC
 	platform_linkflags = $(version_specific_linkflags) -pthread
-        linkopts_ohNet = -Wl,-soname,libohNet.so
+        linkopts_ohNet = -Wl,-soname,libohNet.so.0.0.0
 	osbuilddir = Posix
 	osdir = Posix
 	endian = LITTLE
