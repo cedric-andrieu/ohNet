@@ -6,8 +6,8 @@
  * indicated by returning an error code instead.
  */
 
-#ifndef HEADER_LINN_OS_C
-#define HEADER_LINN_OS_C
+#ifndef HEADER_OS_C
+#define HEADER_OS_C
 
 #include <OpenHome/OsTypes.h>
 
@@ -494,11 +494,13 @@ int32_t OsNetworkListen(THandle aHandle, uint32_t aSlots);
  *
  * This is equivalent to the BSD accept() function
  *
- * @param[in] aHandle      Socket handle returned from OsNetworkCreate()
+ * @param[in]  aHandle         Socket handle returned from OsNetworkCreate()
+ * @param[out] aClientAddress  IPv4 address of client.  0 on error.
+ * @param[out] aClientPort     Port [1..65535] of client.  0 on error
  *
  * @return  a valid handle on success; kHandleNull if creation failed.
  */
-THandle OsNetworkAccept(THandle aHandle);
+THandle OsNetworkAccept(THandle aHandle, TIpAddress* aClientAddress, uint32_t* aClientPort);
 
 /**
  * Convert a string into a IpV4 address
@@ -665,4 +667,4 @@ void OsNetworkSetInterfaceChangedObserver(InterfaceListChanged aCallback, void* 
 } // extern "C"
 #endif
 
-#endif // HEADER_LINN_OS_C
+#endif // HEADER_OS_C

@@ -145,13 +145,13 @@ void HeaderCallback::Process(const Brx& aValue)
     parser.Next('<');
     Brn uri = parser.Next('>');
     TUint bytes = uri.Bytes();
-    if (bytes < Http::kUriPrefix.Bytes()) {
+    if (bytes < Http::kSchemeHttp.Bytes()) {
         THROW(HttpError);
     }
-    if (uri.Split(0, Http::kUriPrefix.Bytes()) != Http::kUriPrefix) {
+    if (uri.Split(0, Http::kSchemeHttp.Bytes()) != Http::kSchemeHttp) {
         THROW(HttpError);
     }
-    parser.Set(uri.Split(Http::kUriPrefix.Bytes()));
+    parser.Set(uri.Split(Http::kSchemeHttp.Bytes()));
     Brn address = parser.Next(':');
     Brn port = parser.Next('/');
     try {
@@ -937,6 +937,12 @@ const char* DviSessionUpnp::ResourceUriPrefix() const
     iResourceUriPrefix.Append("/");
     iResourceUriPrefix.PtrZ();
     return (const char*)iResourceUriPrefix.Ptr();
+}
+
+Endpoint DviSessionUpnp::ClientEndpoint() const
+{
+    Endpoint ep(SocketTcpSession::ClientEndpoint());
+    return ep;
 }
 
 void DviSessionUpnp::InvocationReadStart()

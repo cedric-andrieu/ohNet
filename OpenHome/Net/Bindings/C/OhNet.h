@@ -627,6 +627,15 @@ DllExport TIpAddress STDCALL OhNetNetworkAdapterAddress(OhNetHandleNetworkAdapte
 DllExport TIpAddress STDCALL OhNetNetworkAdapterSubnet(OhNetHandleNetworkAdapter aNif);
 
 /**
+ * Query the netmask that a network interface is available on
+ *
+ * @param[in] aNif             Network interface handle
+ *
+ * @return  IpV4 address as network order uint32
+ */
+DllExport TIpAddress STDCALL OhNetNetworkAdapterMask(OhNetHandleNetworkAdapter aNif);
+
+/**
  * Query the name of a network interface
  *
  * @param[in] aNif             Network interface handle
@@ -702,6 +711,39 @@ DllExport OhNetHandleNetworkAdapter STDCALL OhNetSubnetAt(OhNetHandleNetworkAdap
  * @param[in] aList            Handle returned by OhNetSubnetListCreate()
  */
 DllExport void STDCALL OhNetSubnetListDestroy(OhNetHandleNetworkAdapterList aList);
+
+/**
+ * Create a list of all available network adapters
+ *
+ * @return  Handle to list of network adapters.  Ownership transfers to caller.
+ */
+DllExport OhNetHandleNetworkAdapterList STDCALL OhNetNetworkAdapterListCreate();
+
+/**
+ * Query the number of elements in a network adapter list
+ *
+ * @param[in] aList            Handle returned by OhNetNetworkAdapterListCreate()
+ *
+ * @return  number of elements (network adapters) in the list
+ */
+DllExport uint32_t STDCALL OhNetNetworkAdapterListSize(OhNetHandleNetworkAdapterList aList);
+
+/**
+ * Get a handle to the network adapter at a specified position in a network adapter list.
+ *
+ * @param[in] aList            Handle returned by OhNetNetworkAdapterListCreate()
+ * @param[in] aIndex           Index into the list to return the network adapter from
+ *
+ * @return  network adapter handle
+ */
+DllExport OhNetHandleNetworkAdapter STDCALL OhNetNetworkAdapterAt(OhNetHandleNetworkAdapterList aList, uint32_t aIndex);
+
+/**
+ * Destroy a network adapter list
+ *
+ * @param[in] aList            Handle returned by OhNetNetworkAdapterListCreate()
+ */
+DllExport void STDCALL OhNetNetworkAdapterListDestroy(OhNetHandleNetworkAdapterList aList);
 
 /**
  * Set which subnet the library should use.
