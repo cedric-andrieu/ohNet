@@ -7,7 +7,8 @@
 #include <OpenHome/Net/Private/Discovery.h>
 #include <OpenHome/Private/Thread.h>
 #include <OpenHome/Private/Timer.h>
-#include <OpenHome/Net/Private/Stack.h>
+#include <OpenHome/Private/Env.h>
+#include <OpenHome/Private/NetworkAdapterList.h>
 
 using namespace OpenHome;
 using namespace OpenHome::Net;
@@ -108,9 +109,9 @@ void SsdpNotifyLoggerU::SsdpNotifyServiceTypeByeBye(const Brx& aUuid, const Brx&
 }
 
 
-static TIpAddress NetworkIf(TUint aIndex)
+static TIpAddress NetworkIf(Environment& aEnv, TUint aIndex)
 {
-    const std::vector<NetworkAdapter*>& ifs = Stack::NetworkAdapterList().List();
+    const std::vector<NetworkAdapter*>& ifs = aEnv.NetworkAdapterList().List();
     ASSERT(ifs.size() > 0 && aIndex < ifs.size());
     TIpAddress addr = ifs[aIndex]->Address();
     Endpoint endpt(0, addr);
@@ -120,7 +121,7 @@ static TIpAddress NetworkIf(TUint aIndex)
     return ifs[aIndex]->Address();
 }
 
-void TestSsdpUListen(const std::vector<Brn>& aArgs)
+void TestSsdpUListen(Environment& aEnv, const std::vector<Brn>& aArgs)
 {
     OptionParser parser;
     OptionUint mx("-mx", "--mx", 0, "[1..5] number of second to spread response over");
@@ -143,7 +144,7 @@ void TestSsdpUListen(const std::vector<Brn>& aArgs)
     //Debug::SetLevel(Debug::kSsdpMulticast);
     TBool block = true;
     SsdpNotifyLoggerU logger;
-    SsdpListenerUnicast* uListener = new SsdpListenerUnicast(logger, NetworkIf(adapter.Value()));
+    SsdpListenerUnicast* uListener = new SsdpListenerUnicast(aEnv, logger, NetworkIf(aEnv, adapter.Value()));
     uListener->Start();
     if (all.Value()) {
         Print("Search all...\n");
@@ -179,8 +180,8 @@ void TestSsdpUListen(const std::vector<Brn>& aArgs)
     }
 
     if (block) {
-        Blocker* blocker = new Blocker;
-        blocker->Wait(Stack::InitParams().MsearchTimeSecs());
+        Blocker* blocker = new Blocker(aEnv);
+        blocker->Wait(aEnv.InitParams().MsearchTimeSecs());
         delete blocker;
     }
     delete uListener;

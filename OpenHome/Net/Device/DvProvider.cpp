@@ -3,7 +3,8 @@
 #include <OpenHome/Buffer.h>
 #include <OpenHome/Net/Private/DviDevice.h>
 #include <OpenHome/Private/Printer.h>
-#include <OpenHome/Net/Private/Stack.h>
+#include <OpenHome/Private/Env.h>
+#include <OpenHome/Net/Private/DviStack.h>
 
 using namespace OpenHome;
 using namespace OpenHome::Net;
@@ -11,18 +12,20 @@ using namespace OpenHome::Net;
 void DvProvider::PropertiesLock()
 {
     iService->PropertiesLock();
-    Stack::Mutex().Wait();
+    Mutex& lock = iDvStack.Env().Mutex();
+    lock.Wait();
     iDelayPropertyUpdates = true;
-    Stack::Mutex().Signal();
+    lock.Signal();
 }
 
 void DvProvider::PropertiesUnlock()
 {
-    Stack::Mutex().Wait();
+    Mutex& lock = iDvStack.Env().Mutex();
+    lock.Wait();
     TBool report = iPropertyChanged;
     iPropertyChanged = false;
     iDelayPropertyUpdates = false;
-    Stack::Mutex().Signal();
+    lock.Signal();
     iService->PropertiesUnlock();
     if (report) {
         iService->PublishPropertyUpdates();
@@ -30,10 +33,11 @@ void DvProvider::PropertiesUnlock()
 }
 
 DvProvider::DvProvider(DviDevice& aDevice, const TChar* aDomain, const TChar* aType, TUint aVersion)
-    : iDelayPropertyUpdates(false)
+    : iDvStack(aDevice.GetDvStack())
+    , iDelayPropertyUpdates(false)
     , iPropertyChanged(false)
 {
-    iService = new DviService(aDomain, aType, aVersion);
+    iService = new DviService(iDvStack, aDomain, aType, aVersion);
     aDevice.AddService(iService);
 }
 
@@ -90,12 +94,13 @@ bool DvProvider::SetPropertyBinary(PropertyBinary& aProperty, const Brx& aValue)
 
 void DvProvider::TryPublishUpdate()
 {
-    Stack::Mutex().Wait();
+    Mutex& lock = iDvStack.Env().Mutex();
+    lock.Wait();
     TBool publish = !iDelayPropertyUpdates;
     if (iDelayPropertyUpdates) {
         iPropertyChanged = true;
     }
-    Stack::Mutex().Signal();
+    lock.Signal();
     if (publish) {
         iService->PublishPropertyUpdates();
     }

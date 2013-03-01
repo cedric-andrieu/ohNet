@@ -5,10 +5,9 @@
 #include <OpenHome/Net/Core/DvOpenhomeOrgTestBasic1.h>
 #include <OpenHome/Net/Core/CpOpenhomeOrgTestBasic1.h>
 #include <OpenHome/Net/Private/DviProviderSubscriptionLongPoll.h>
+#include <OpenHome/Private/File.h>
 
-#include <stdlib.h>
 #include <vector>
-#include <sys/stat.h>
 
 using namespace OpenHome;
 using namespace OpenHome::Net;
@@ -17,7 +16,7 @@ using namespace OpenHome::TestFramework;
 class DeviceTestBasic : public IResourceManager
 {
 public:
-    DeviceTestBasic(const Brx& aConfigDir);
+    DeviceTestBasic(DvStack& aDvStack, const Brx& aConfigDir);
     ~DeviceTestBasic();
 private:
     void WriteResource(const Brx& aUriTail, TIpAddress aInterface, std::vector<char*>& aLanguageList, IResourceWriter& aResourceWriter);
@@ -29,10 +28,10 @@ private:
 
 
 
-DeviceTestBasic::DeviceTestBasic(const Brx& aConfigDir)
+DeviceTestBasic::DeviceTestBasic(DvStack& aDvStack, const Brx& aConfigDir)
     : iConfigDir(aConfigDir)
 {
-    iDevice = new DvDeviceStandard(Brn("device-ohNetTestBasic"), *this);
+    iDevice = new DvDeviceStandard(aDvStack, Brn("device-ohNetTestBasic"), *this);
     iDevice->SetAttribute("Upnp.Domain", "openhome.org");
     iDevice->SetAttribute("Upnp.Type", "Test");
     iDevice->SetAttribute("Upnp.Version", "1");
@@ -72,15 +71,18 @@ void DeviceTestBasic::WriteResource(const Brx& aUriTail, TIpAddress /*aInterface
     filePath.Append(file);
     filePath.PtrZ();
 
+    IFile* filePtr = NULL;
+
     const char* path = (const char*)filePath.Ptr();
-    FILE* fd = fopen(path, "rb");
-    if (fd == NULL) {
+    try {
+        filePtr = IFile::Open(path, eFileReadOnly);
+    }
+    catch ( FileOpenError ) {
         return;
     }
+
     static const TUint kMaxReadSize = 4096;
-    struct stat fileStats;
-    (void)stat(path, &fileStats);
-    TUint bytes = (TUint)fileStats.st_size;
+    TUint bytes = filePtr->Bytes();
     const char* mime = NULL;
     for (TUint i=filePath.Bytes()-1; i>0; i--) {
         if (filePath[i] == '/' || filePath[i] == '\\') {
@@ -96,15 +98,15 @@ void DeviceTestBasic::WriteResource(const Brx& aUriTail, TIpAddress /*aInterface
     }
     aResourceWriter.WriteResourceBegin(bytes, mime);
     do {
-        TByte buf[kMaxReadSize];
+        Bws<kMaxReadSize> buf;
         TUint size = (bytes<kMaxReadSize? bytes : kMaxReadSize);
-        size_t records_read = fread(buf, size, 1, fd);
-        ASSERT(records_read == 1);
-        aResourceWriter.WriteResource(buf, size);
+        filePtr->Read(buf, size);
+        ASSERT(buf.Bytes() == size);
+        aResourceWriter.WriteResource(buf.Ptr(), buf.Bytes());
         bytes -= size;
     } while (bytes > 0);
     aResourceWriter.WriteResourceEnd();
-    (void)fclose(fd);
+    delete filePtr;
 }
 
 
@@ -130,17 +132,17 @@ void OpenHome::TestFramework::Runner::Main(TInt aArgc, TChar* aArgv[], Initialis
     aInitParams->SetDvNumWebSocketThreads(5);
     aInitParams->SetDvWebSocketPort(54320);
     aInitParams->SetDvUpnpServerPort(0);
-    UpnpLibrary::Initialise(aInitParams);
+    Library* lib = new Library(aInitParams);
     Debug::SetLevel(Debug::kDvWebSocket | Debug::kError | Debug::kDvInvocation | Debug::kDvEvent | Debug::kDvDevice);
-    UpnpLibrary::StartDv();
+    DvStack* dvStack = lib->StartDv();
 
     Print("TestDvTestBasic - starting ('q' to quit)\n");
-    DeviceTestBasic* device = new DeviceTestBasic(config.Value());
+    DeviceTestBasic* device = new DeviceTestBasic(*dvStack, config.Value());
     while (getchar() != 'q') {
         ;
     }
     delete device;
     Print("TestDvTestBasic - exiting\n");
 
-    UpnpLibrary::Close();
+    delete lib;
 }

@@ -1,4 +1,5 @@
 #include <jni.h>
+#include <OpenHome/Os.h>
 #include "Library.h"
 #include "OpenHome/Net/C/OhNet.h"
 
@@ -43,7 +44,13 @@ JNIEXPORT jlong JNICALL Java_org_openhome_net_core_Library_OhNetLibraryInitialis
 JNIEXPORT jint JNICALL Java_org_openhome_net_core_Library_OhNetLibraryStartCp
   (JNIEnv *aEnv, jclass aClass, jint aSubnet)
 {
+#ifdef DEFINE_LITTLE_ENDIAN
+    TIpAddress subnet = (TIpAddress) SwapEndian32(aSubnet);
+#elif defined DEFINE_BIG_ENDIAN
 	TIpAddress subnet = (TIpAddress) aSubnet;
+#else
+# error Endianness not defined
+#endif
 	aEnv = aEnv;
 	aClass = aClass;
 	
@@ -72,8 +79,14 @@ JNIEXPORT jint JNICALL Java_org_openhome_net_core_Library_OhNetLibraryStartDv
 JNIEXPORT jint JNICALL Java_org_openhome_net_core_Library_OhNetLibraryStartCombined
   (JNIEnv *aEnv, jclass aClass, jint aSubnet)
 {
-	TIpAddress subnet = (TIpAddress) aSubnet;
-	aEnv = aEnv;
+#ifdef DEFINE_LITTLE_ENDIAN
+    TIpAddress subnet = (TIpAddress) SwapEndian32(aSubnet);
+#elif defined DEFINE_BIG_ENDIAN
+    TIpAddress subnet = (TIpAddress) aSubnet;
+#else
+ #error Endianness not defined
+#endif
+    aEnv = aEnv;
 	aClass = aClass;
 	
 	return (jint) OhNetLibraryStartCombined(subnet);
@@ -107,6 +120,20 @@ JNIEXPORT void JNICALL Java_org_openhome_net_core_Library_OhNetSetCurrentSubnet
 	aClass = aClass;
 
 	OhNetSetCurrentSubnet(subnetAddress);
+}
+
+/*
+ * Class:     org_openhome_net_core_Library
+ * Method:    OhNetDebugSetLevel
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_org_openhome_net_core_Library_OhNetDebugSetLevel
+  (JNIEnv *aEnv, jclass aClass, jint aLevel)
+{
+   aEnv = aEnv;
+   aClass = aClass;
+
+   OhNetDebugSetLevel((uint32_t)aLevel);
 }
 
 /*

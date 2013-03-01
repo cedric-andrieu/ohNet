@@ -1,4 +1,4 @@
-# Makefile for linux
+#Makefile for linux
 # Could be extended to support Mac in future
 
 rsync ?= yes
@@ -15,7 +15,7 @@ debug_csharp = /define:DEBUG /debug+
 build_dir = Debug
 openhome_configuration = Debug
 else
-debug_specific_cflags = -O2
+debug_specific_cflags = -g -O2
 debug_csharp = /optimize+
 build_dir = Release
 openhome_configuration = Release
@@ -28,6 +28,7 @@ endif
 gcc_machine = $(shell ${CROSS_COMPILE}gcc -dumpmachine)
 MACHINE = $(shell uname -s)
 
+$(info CROSS_COMPILE: ${CROSS_COMPILE})
 $(info Machine reported by compiler is: ${gcc_machine})
 $(info Machine reported by uname is: ${MACHINE})
 
@@ -48,10 +49,7 @@ ifeq ($(MACHINE),Darwin)
 else
   # At present, platform == Vanilla is used for Kirkwood, x86 and x64 Posix builds.
   platform ?= Vanilla
-  ifeq ($(platform), Core)
-    detected_openhome_system = Core
-    detected_openhome_architecture = Core
-  else
+
     ifneq (,$(findstring linux,$(gcc_machine)))
       detected_openhome_system = Linux
     endif
@@ -82,7 +80,8 @@ else
     ifneq (,$(findstring x86_64,$(gcc_machine)))
       detected_openhome_architecture = x64
     endif
-  endif
+
+
 endif
 
 detected_openhome_system ?= Unknown
@@ -148,20 +147,42 @@ ifeq ($(platform),IntelMac)
 	openhome_system = Mac
 endif
 
-ifeq ($(platform), Core)
-	# platform == Core
-	freertoslwipdir ?= ${FREERTOSLWIP}
-	platform_cflags = -I$(freertoslwipdir)/include/ -I$(freertoslwipdir)/include/FreeRTOS/ -I$(freertoslwipdir)/include/lwip/ -mcpu=403
-	platform_linkflags = -B$(freertoslwipdir)/lib/ -specs bsp_specs -mcpu=403
-	linkopts_ohNet =
-	osbuilddir = Volkano2
-	osdir = Volkano2
-	endian = BIG
-	native_only = yes
+ifeq ($(platform), Core-ppc32)
+    # platform == Core1
+    openhome_system = Core
+    openhome_architecture = ppc32
+    endian = BIG
+    platform_cflags = -mcpu=405
+    platform_linkflags = -mcpu=405 ${CROSS_LINKFLAGS}
+    linkopts_ohNet =
+    osdir = Core
+    osbuilddir = Core-ppc32
+    objdir = Build/Obj/$(osbuilddir)/$(build_dir)/
+    native_only = yes
+    compiler = ${CROSS_COMPILE}gcc -o $(objdir)
+    link = ${CROSS_COMPILE}g++ $(platform_linkflags)
+    ar = ${CROSS_COMPILE}ar rc $(objdir)
+endif
+
+ifeq ($(platform), Core-armv6)
+    # platform == Core2
+    openhome_system = Core
+    openhome_architecture = armv6
+    endian = LITTLE
+    platform_cflags = -mcpu=arm926ej-s -Wno-psabi
+    platform_linkflags = -mcpu=arm926ej-s ${CROSS_LINKFLAGS}
+    linkopts_ohNet =
+    osdir = Core
+    osbuilddir = Core-armv6
+    objdir = Build/Obj/$(osbuilddir)/$(build_dir)/
+    native_only = yes
+    compiler = ${CROSS_COMPILE}gcc -o $(objdir)
+    link = ${CROSS_COMPILE}g++ $(platform_linkflags)
+    ar = ${CROSS_COMPILE}ar rc $(objdir)
 endif
 
 
-ifneq (,$(findstring $(platform),Core Vanilla))
+ifneq (,$(findstring $(platform),Vanilla))
   ifeq ($(gcc4_1), yes)
     version_specific_cflags = ${CROSS_COMPILE_CFLAGS}
     version_specific_cflags_third_party = -Wno-non-virtual-dtor
@@ -190,9 +211,8 @@ ifeq ($(platform), Vanilla)
         linkopts_ohNet = -Wl,-soname,libohNet.so.0.0.0
 	osbuilddir = Posix
 	osdir = Posix
-	endian = LITTLE
+	endian ?= LITTLE
 	openhome_system = Linux
-
 endif
 
 # Macros used by Common.mak
@@ -244,7 +264,7 @@ else
 	jar = $(JAVA_HOME)/bin/jar
 endif
 
-java_cflags = -fexceptions -Wall $(version_specific_java_cflags) -Werror -pipe -D_GNU_SOURCE -D_REENTRANT -DDEFINE_LITTLE_ENDIAN -DDEFINE_TRACE $(debug_specific_cflags) $(platform_cflags)
+java_cflags = -fexceptions -Wall $(version_specific_java_cflags) -Werror -pipe -D_GNU_SOURCE -D_REENTRANT -DDEFINE_$(endian)_ENDIAN -DDEFINE_TRACE $(debug_specific_cflags) $(platform_cflags)
 jarflags = cf
 dirsep = /
 prefix = /usr/local

@@ -16,6 +16,9 @@
 #include <map>
 
 namespace OpenHome {
+
+class Environment;
+    
 namespace Net {
 
 class MdnsPlatform
@@ -25,7 +28,7 @@ class MdnsPlatform
     static const TUint kMaxHostBytes = 16;
     static const TUint kMaxMessageBytes = 4096;
 public: 
-    MdnsPlatform(const TChar* aHost);
+    MdnsPlatform(Environment& aStack, const TChar* aHost);
     ~MdnsPlatform();
     Status Init();
     void Lock();
@@ -67,6 +70,7 @@ private:
         NetworkInterfaceInfo* iMdnsInfo;
     };
 private:
+    Environment& iEnv;
     Brhz iHost;
     Mutex iMutex;
     ThreadFunctor* iThreadListen;

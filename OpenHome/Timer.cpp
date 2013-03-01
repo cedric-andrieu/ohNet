@@ -1,6 +1,6 @@
 #include <OpenHome/Private/Timer.h>
 #include <OpenHome/OsWrapper.h>
-#include <OpenHome/Net/Private/Stack.h>
+#include <OpenHome/Private/Env.h>
 #include <OpenHome/Private/Thread.h>
 #include <OpenHome/Private/Debug.h>
 
@@ -8,9 +8,9 @@ using namespace OpenHome;
 
 // Time
 
-TUint Time::Now()
+TUint Time::Now(Environment& aEnv)
 {
-    return Os::TimeInMs();
+    return Os::TimeInMs(aEnv.OsCtx());
 };
 
 TBool Time::IsBeforeOrAt(TUint aQuestionableTime, TUint aTime)
@@ -25,68 +25,67 @@ TBool Time::IsAfter(TUint aQuestionableTime, TUint aTime)
     return (diff < 0);
 }
 
-TBool Time::IsInPastOrNow(TUint aTime)
+TBool Time::IsInPastOrNow(Environment& aEnv, TUint aTime)
 {
-    return (IsBeforeOrAt(aTime, Now()));
+    return (IsBeforeOrAt(aTime, Now(aEnv)));
 }
 
-TBool Time::IsInFuture(TUint aTime)
+TBool Time::IsInFuture(Environment& aEnv, TUint aTime)
 {
-    return (IsAfter(aTime, Now()));
+    return (IsAfter(aTime, Now(aEnv)));
 }
 
-TInt Time::TimeToWaitFor(TUint aTime)
+TInt Time::TimeToWaitFor(Environment& aEnv, TUint aTime)
 {
-    return (aTime - Os::TimeInMs());
+    return (aTime - Os::TimeInMs(aEnv.OsCtx()));
 }
 
 // Timer
 
-Timer::Timer(Functor aFunctor)
-: iFunctor(aFunctor)
+Timer::Timer(Environment& aEnv, Functor aFunctor)
+    : iMgr(aEnv.TimerManager())
+    , iFunctor(aFunctor)
 {
 }
 
 void Timer::FireIn(TUint aTime)
 {
     LOG(kTimer, ">Timer::FireIn(%d)\n", aTime);
-    FireAt(Time::Now() + aTime);
+    FireAt(Time::Now(iMgr.iEnv) + aTime);
     LOG(kTimer, "<Timer::FireIn(%d)\n", aTime);
 }
 
 void Timer::FireAt(TUint aTime)
 {
     LOG(kTimer, ">Timer::FireAt(%d)\n", aTime);
-    TimerManager& manager = OpenHome::Net::Stack::TimerManager();
-    manager.Remove(*this);
+    iMgr.Remove(*this);
     iTime = aTime;
-    manager.Add(*this);
+    iMgr.Add(*this);
     LOG(kTimer, "<Timer::FireAt(%d)\n", aTime);
 }
 
 void Timer::Cancel()
 {
     LOG(kTimer, ">Timer::Cancel()\n");
-    TimerManager& mgr = Net::Stack::TimerManager();
-    TBool lock = !IsInManagerThread();
+    TBool lock = !IsInManagerThread(iMgr);
     if (lock) {
-        mgr.CallbackLock();
+        iMgr.CallbackLock();
     }
-    OpenHome::Net::Stack::TimerManager().Remove(*this);
+    iMgr.Remove(*this);
     if (lock) {
-        mgr.CallbackUnlock();
+        iMgr.CallbackUnlock();
     }
     LOG(kTimer, "<Timer::Cancel()\n");
 }
 
-TBool Timer::IsInManagerThread()
-{
-    Thread* current = NULL;
-    try {
-        current = Thread::Current();
-    }
-    catch (ThreadUnknown&) {}
-    return (current == Net::Stack::TimerManager().Thread());
+TBool Timer::IsInManagerThread(OpenHome::Environment& aEnv)
+{ // static
+    return IsInManagerThread(aEnv.TimerManager());
+}
+
+TBool Timer::IsInManagerThread(TimerManager& aMgr)
+{ // static
+    return (Thread::Current() == aMgr.MgrThread());
 }
 
 Timer::~Timer()
@@ -96,8 +95,9 @@ Timer::~Timer()
 
 // TimerManager
 
-TimerManager::TimerManager()
-    : iMutexNow("NOWM")
+TimerManager::TimerManager(Environment& aEnv)
+    : iEnv(aEnv)
+    , iMutexNow("NOWM")
     , iRemoving(false)
     , iSemaphore("TIMM", 0)
     , iMutex("TIMM")
@@ -197,7 +197,7 @@ void TimerManager::HeadChanged(QueueSortedEntry& aEntry)
 
 void TimerManager::Fire()
 {
-    TUint now = Os::TimeInMs();
+    TUint now = Os::TimeInMs(iEnv.OsCtx());
     iMutexNow.Wait();
     iRemoving = true;
     iNow.iTime = now + 1; // will go after all the entries before or at now
@@ -228,7 +228,7 @@ void TimerManager::Fire()
     CallbackUnlock();
 }
 
-OpenHome::Thread* TimerManager::Thread() const
+Thread* TimerManager::MgrThread() const
 {
     return iThreadHandle;
 }
@@ -244,7 +244,7 @@ void TimerManager::Run()
     iSemaphore.Wait();
     iMutex.Wait();
     while (!iStop) {
-        TInt delay = Time::TimeToWaitFor(iNextTimer);
+        TInt delay = Time::TimeToWaitFor(iEnv, iNextTimer);
         iMutex.Signal();
         if (delay <= 0) { // in the past or now
             Fire();

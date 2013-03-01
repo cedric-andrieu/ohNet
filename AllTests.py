@@ -23,8 +23,10 @@ def objPath():
     path = os.path.join('Build', 'Obj', plat, variant)
     return path
 
-def build(aTarget):
+def build(aTarget, aParallel=False):
     buildCmd = 'make '
+    if aParallel:
+        buildCmd += '-j4 '
     if os.name == 'nt':
         buildCmd = 'nmake -s -f OhNet.mak '
     buildCmd += aTarget
@@ -36,6 +38,9 @@ def build(aTarget):
         buildCmd += ' mac-64=1'
     if gMacArm == 1:
         buildCmd += ' mac-arm=1'
+    if gCore == 1:
+        buildCmd += ' platform=' + gPlatform
+
     ret = os.system(buildCmd)
     if (0 != ret):
         print '\nBuild for ' + aTarget + ' failed, aborting'
@@ -49,9 +54,14 @@ def runBuilds():
         else:
             cleanCmd = 'make clean'
         os.system(cleanCmd)
-    build('all')
+    if gParallel:
+        build('copy_build_includes')
+    if gCore == 1:
+        build('ohNet TestFramework', gParallel)
+    else:
+        build('all', gParallel)
     if (gRunJavaTests == 1):
-        build('ohNetJavaAll')
+        build('ohNetJavaAll', False)
     print '\nBuilds complete'
 
 def runTests():
@@ -170,6 +180,12 @@ gJsTests = 0
 gDebugBuild = 0
 gMac64 = 0
 gMacArm = 0
+try:
+    gPlatform = os.environ['PLATFORM']
+except KeyError:
+    gPlatform = None
+gCore = 0
+gParallel = False
 for arg in sys.argv[1:]:
     if arg == '-b' or arg == '--buildonly':
         gBuildOnly = 1
@@ -209,6 +225,10 @@ for arg in sys.argv[1:]:
         if platform.system() != 'Darwin':
             print 'ERROR - --mac-arm only applicable on Darwin'
             sys.exit(1)
+    elif arg == '--parallel':
+        gParallel = True
+    elif arg == '--core':
+        gCore = 1
     else:
         print 'Unrecognised argument - ' + arg
         sys.exit(1)
@@ -236,6 +256,7 @@ class TestCase(object):
 gAllTests = [ TestCase('TestBuffer', [], True)
              ,TestCase('TestThread', [], True)
              ,TestCase('TestFifo', [], True)
+             ,TestCase('TestFile', [], True)
              ,TestCase('TestQueue', [], True)
              ,TestCase('TestTextUtils', [], True)
              ,TestCase('TestNetwork', [], True)

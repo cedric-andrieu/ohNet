@@ -8,7 +8,7 @@
 #define HEADER_DVI_STACK
 
 #include <OpenHome/OhNetTypes.h>
-#include <OpenHome/Net/Private/Stack.h>
+#include <OpenHome/Private/Env.h>
 #include <OpenHome/Net/Private/DviServerUpnp.h>
 #include <OpenHome/Net/Private/DviDevice.h>
 #include <OpenHome/Net/Private/DviSubscription.h>
@@ -16,28 +16,30 @@
 #include <OpenHome/Net/Private/DviService.h>
 #include <OpenHome/Net/Private/Bonjour.h>
 #include <OpenHome/Net/Private/DviPropertyUpdateCollection.h>
+#include <OpenHome/Private/Standard.h>
 
 #include <vector>
 
 namespace OpenHome {
 namespace Net {
 
-class DviStack : private IStack
+class DvStack : private IStack, private INonCopyable
 {
 public:
-    DviStack();
-    static TUint BootId();
-    static TUint NextBootId();
-    static void UpdateBootId();
-    static DviServerUpnp& ServerUpnp();
-    static DviDeviceMap& DeviceMap();
-    static DviSubscriptionManager& SubscriptionManager();
-    static IMdnsProvider* MdnsProvider();
-    static DviPropertyUpdateCollection& PropertyUpdateCollection();
+    DvStack(Environment& aEnv);
+    Environment& Env() { return iEnv; }
+    TUint BootId();
+    TUint NextBootId();
+    void UpdateBootId();
+    DviServerUpnp& ServerUpnp();
+    DviDeviceMap& DeviceMap();
+    DviSubscriptionManager& SubscriptionManager();
+    IMdnsProvider* MdnsProvider();
+    DviPropertyUpdateCollection& PropertyUpdateCollection();
 private:
-    ~DviStack();
-    static DviStack* Self();
+    ~DvStack();
 private:
+    OpenHome::Environment& iEnv;
     TUint iBootId;
     TUint iNextBootId;
     DviServerUpnp* iDviServerUpnp;

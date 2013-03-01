@@ -1,17 +1,18 @@
 #include <OpenHome/Net/Private/Discovery.h>
 #include <OpenHome/Net/Private/Ssdp.h>
 #include <OpenHome/Private/Debug.h>
-#include <OpenHome/Net/Private/Stack.h>
+#include <OpenHome/Private/Env.h>
+#include <OpenHome/Net/Core/OhNet.h>
 
 using namespace OpenHome;
 using namespace OpenHome::Net;
 
 // SsdpSocketReader
 
-SsdpSocketReader::SsdpSocketReader(TIpAddress aInterface, const Endpoint& aMulticast)
-    : SocketUdpMulticast(aInterface, aMulticast)
+SsdpSocketReader::SsdpSocketReader(Environment& aEnv, TIpAddress aInterface, const Endpoint& aMulticast)
+    : SocketUdpMulticast(aEnv, aInterface, aMulticast)
 {
-    SetTtl(Stack::InitParams().MsearchTtl()); 
+    SetTtl(aEnv.InitParams().MsearchTtl()); 
     iReader = new UdpReader(*this);
 }
 
@@ -52,13 +53,13 @@ SsdpListener::SsdpListener()
 // Reader chain: Multicast Socket -> Srs -> ReaderHttpRequest -> this -> aMsearch
 //                                                                    -> aNotify
 
-SsdpListenerMulticast::SsdpListenerMulticast(TIpAddress aInterface)
+SsdpListenerMulticast::SsdpListenerMulticast(Environment& aEnv, TIpAddress aInterface)
     : iLock("LMCM")
     , iNextHandlerId(0)
     , iInterface(aInterface)
-    , iSocket(aInterface, Endpoint(Ssdp::kMulticastPort, Ssdp::kMulticastAddress))
+    , iSocket(aEnv, aInterface, Endpoint(Ssdp::kMulticastPort, Ssdp::kMulticastAddress))
     , iBuffer(iSocket)
-    , iReaderRequest(iBuffer)
+    , iReaderRequest(aEnv, iBuffer)
     , iExiting(false)
 {
     try
@@ -410,18 +411,19 @@ void SsdpListenerMulticast::EraseDisabled(VectorMsearchHandler& aVector)
 // Reader chain: Multicast Socket -> Srs -> ReaderHttpRequest -> this -> aMsearch
 //                                                                    -> aNotify
 
-SsdpListenerUnicast::SsdpListenerUnicast(ISsdpNotifyHandler& aNotifyHandler, TIpAddress aInterface)
-    : iNotifyHandler(aNotifyHandler)
-    , iSocket(0, aInterface)
+SsdpListenerUnicast::SsdpListenerUnicast(Environment& aEnv, ISsdpNotifyHandler& aNotifyHandler, TIpAddress aInterface)
+    : iEnv(aEnv)
+    , iNotifyHandler(aNotifyHandler)
+    , iSocket(aEnv, 0, aInterface)
     , iSocketWriter(iSocket, Endpoint(Ssdp::kMulticastPort, Ssdp::kMulticastAddress))
     , iSocketReader(iSocket)
     , iWriteBuffer(iSocketWriter)
     , iWriter(iWriteBuffer)
     , iReadBuffer(iSocketReader)
-    , iReaderResponse(iReadBuffer)
+    , iReaderResponse(aEnv, iReadBuffer)
     , iExiting(false)
 {
-    iSocket.SetTtl(Stack::InitParams().MsearchTtl());
+    iSocket.SetTtl(aEnv.InitParams().MsearchTtl());
     try
     {
         iSocket.SetRecvBufBytes(kRecvBufBytes);
@@ -556,5 +558,5 @@ void SsdpListenerUnicast::MsearchAll()
 
 TUint SsdpListenerUnicast::MsearchDurationSeconds() const
 {
-    return Stack::InitParams().MsearchTimeSecs();
+    return iEnv.InitParams().MsearchTimeSecs();
 }

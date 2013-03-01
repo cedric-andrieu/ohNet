@@ -13,8 +13,9 @@
 #include <OpenHome/Private/TestFramework.h>
 #include <OpenHome/OsWrapper.h>
 #include <OpenHome/Private/Thread.h>
-#include <OpenHome/Net/Private/Stack.h>
+#include <OpenHome/Private/Env.h>
 #include <OpenHome/Private/Debug.h>
+#include <OpenHome/Net/Private/Globals.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -123,15 +124,15 @@ void DeviceList::InvokeSync()
 
 void DeviceList::PollInvoke()
 {
-    Timer timer(MakeFunctor(*this, &DeviceList::TimerExpired));
+    Timer timer(*gEnv, MakeFunctor(*this, &DeviceList::TimerExpired));
     for (TUint i=0; i<iList.size(); i++) {
         CpDeviceC device = iList[i];
         TUint countBefore = gActionCount;
         Print("Device %s", CpDeviceCUdn(device));
         iConnMgr = CpProxyUpnpOrgConnectionManager1Create(device);
-        iStopTimeMs = Os::TimeInMs() + kDevicePollMs;
+        iStopTimeMs = Os::TimeInMs(gEnv->OsCtx()) + kDevicePollMs;
         timer.FireIn(kDevicePollMs);
-        for (TUint j=0; j<Stack::InitParams().NumActionInvokerThreads(); j++) {
+        for (TUint j=0; j<gEnv->InitParams().NumActionInvokerThreads(); j++) {
             CpProxyUpnpOrgConnectionManager1BeginGetProtocolInfo(iConnMgr, getProtocolInfoComplete, this);
         }
         iPollStop.Wait();
@@ -151,7 +152,7 @@ void DeviceList::PollSubscribe()
         Print("Device %s", CpDeviceCUdn(device));
         THandle connMgr = CpProxyUpnpOrgConnectionManager1Create(device);
         CpProxySetPropertyChanged(connMgr, initialNotificationComplete, &sem);
-        TUint startTime = Os::TimeInMs();
+        TUint startTime = Os::TimeInMs(gEnv->OsCtx());
         while(true) {
             CpProxySubscribe(connMgr);
             try {
@@ -159,7 +160,7 @@ void DeviceList::PollSubscribe()
             }
             catch(Timeout&) {}
             CpProxyUnsubscribe(connMgr);
-            if (Os::TimeInMs() - startTime > kDevicePollMs) {
+            if (Os::TimeInMs(gEnv->OsCtx()) - startTime > kDevicePollMs) {
                 break;
             }
             gSubscriptionCount++;
@@ -209,7 +210,7 @@ void DeviceList::TimerExpired()
 
 void DeviceList::GetProtocolInfoComplete(OhNetHandleAsync aAsync)
 {
-    if (Os::TimeInMs() >= iStopTimeMs) {
+    if (Os::TimeInMs(gEnv->OsCtx()) >= iStopTimeMs) {
         return;
     }
     CpProxyUpnpOrgConnectionManager1BeginGetProtocolInfo(iConnMgr, getProtocolInfoComplete, this);
@@ -254,7 +255,7 @@ extern "C" void OhNetTestRunner(OhNetHandleInitParams aInitParams)
     DeviceList* deviceList = new DeviceList;
     HandleCpDeviceList dlh = CpDeviceListCreateUpnpServiceType("upnp.org", "ConnectionManager", 1,
                                                                added, deviceList, removed, deviceList);
-    Blocker* blocker = new Blocker;
+    Blocker* blocker = new Blocker(*gEnv);
     blocker->Wait(OhNetInitParamsMsearchTimeSecs(aInitParams));
     delete blocker;
     deviceList->Stop();
@@ -263,15 +264,15 @@ extern "C" void OhNetTestRunner(OhNetHandleInitParams aInitParams)
 
     Print("\n\n");
     const TUint count = deviceList->Count();
-    TUint startTime = Os::TimeInMs();
+    TUint startTime = Os::TimeInMs(gEnv->OsCtx());
     deviceList->PollInvoke();
     Print("\n%u actions invoked on %u devices (avg %u) in %u seconds\n\n",
-                        gActionCount, count, (count==0? 0 : gActionCount/count), (Os::TimeInMs()-startTime+500)/1000);
+                        gActionCount, count, (count==0? 0 : gActionCount/count), (Os::TimeInMs(gEnv->OsCtx())-startTime+500)/1000);
 
-    startTime = Os::TimeInMs();
+    startTime = Os::TimeInMs(gEnv->OsCtx());
     deviceList->PollSubscribe();
     Print("\n%u subscriptions on %u devices (avg %u) in %u seconds\n",
-                        gSubscriptionCount, count, (count==0? 0 : gSubscriptionCount/count), (Os::TimeInMs()-startTime+500)/1000);
+                        gSubscriptionCount, count, (count==0? 0 : gSubscriptionCount/count), (Os::TimeInMs(gEnv->OsCtx())-startTime+500)/1000);
 
     CpDeviceListDestroy(dlh);
     delete deviceList;

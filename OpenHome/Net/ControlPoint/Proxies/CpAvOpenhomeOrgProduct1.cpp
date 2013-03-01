@@ -5,6 +5,7 @@
 #include <OpenHome/Net/Private/AsyncPrivate.h>
 #include <OpenHome/Net/Core/CpDevice.h>
 #include <OpenHome/Net/Private/Error.h>
+#include <OpenHome/Net/Private/CpiDevice.h>
 
 using namespace OpenHome;
 using namespace OpenHome::Net;
@@ -416,58 +417,58 @@ CpProxyAvOpenhomeOrgProduct1::CpProxyAvOpenhomeOrgProduct1(CpDevice& aDevice)
 
     Functor functor;
     functor = MakeFunctor(*this, &CpProxyAvOpenhomeOrgProduct1::ManufacturerNamePropertyChanged);
-    iManufacturerName = new PropertyString("ManufacturerName", functor);
+    iManufacturerName = new PropertyString(aDevice.Device().GetCpStack().Env(), "ManufacturerName", functor);
     AddProperty(iManufacturerName);
     functor = MakeFunctor(*this, &CpProxyAvOpenhomeOrgProduct1::ManufacturerInfoPropertyChanged);
-    iManufacturerInfo = new PropertyString("ManufacturerInfo", functor);
+    iManufacturerInfo = new PropertyString(aDevice.Device().GetCpStack().Env(), "ManufacturerInfo", functor);
     AddProperty(iManufacturerInfo);
     functor = MakeFunctor(*this, &CpProxyAvOpenhomeOrgProduct1::ManufacturerUrlPropertyChanged);
-    iManufacturerUrl = new PropertyString("ManufacturerUrl", functor);
+    iManufacturerUrl = new PropertyString(aDevice.Device().GetCpStack().Env(), "ManufacturerUrl", functor);
     AddProperty(iManufacturerUrl);
     functor = MakeFunctor(*this, &CpProxyAvOpenhomeOrgProduct1::ManufacturerImageUriPropertyChanged);
-    iManufacturerImageUri = new PropertyString("ManufacturerImageUri", functor);
+    iManufacturerImageUri = new PropertyString(aDevice.Device().GetCpStack().Env(), "ManufacturerImageUri", functor);
     AddProperty(iManufacturerImageUri);
     functor = MakeFunctor(*this, &CpProxyAvOpenhomeOrgProduct1::ModelNamePropertyChanged);
-    iModelName = new PropertyString("ModelName", functor);
+    iModelName = new PropertyString(aDevice.Device().GetCpStack().Env(), "ModelName", functor);
     AddProperty(iModelName);
     functor = MakeFunctor(*this, &CpProxyAvOpenhomeOrgProduct1::ModelInfoPropertyChanged);
-    iModelInfo = new PropertyString("ModelInfo", functor);
+    iModelInfo = new PropertyString(aDevice.Device().GetCpStack().Env(), "ModelInfo", functor);
     AddProperty(iModelInfo);
     functor = MakeFunctor(*this, &CpProxyAvOpenhomeOrgProduct1::ModelUrlPropertyChanged);
-    iModelUrl = new PropertyString("ModelUrl", functor);
+    iModelUrl = new PropertyString(aDevice.Device().GetCpStack().Env(), "ModelUrl", functor);
     AddProperty(iModelUrl);
     functor = MakeFunctor(*this, &CpProxyAvOpenhomeOrgProduct1::ModelImageUriPropertyChanged);
-    iModelImageUri = new PropertyString("ModelImageUri", functor);
+    iModelImageUri = new PropertyString(aDevice.Device().GetCpStack().Env(), "ModelImageUri", functor);
     AddProperty(iModelImageUri);
     functor = MakeFunctor(*this, &CpProxyAvOpenhomeOrgProduct1::ProductRoomPropertyChanged);
-    iProductRoom = new PropertyString("ProductRoom", functor);
+    iProductRoom = new PropertyString(aDevice.Device().GetCpStack().Env(), "ProductRoom", functor);
     AddProperty(iProductRoom);
     functor = MakeFunctor(*this, &CpProxyAvOpenhomeOrgProduct1::ProductNamePropertyChanged);
-    iProductName = new PropertyString("ProductName", functor);
+    iProductName = new PropertyString(aDevice.Device().GetCpStack().Env(), "ProductName", functor);
     AddProperty(iProductName);
     functor = MakeFunctor(*this, &CpProxyAvOpenhomeOrgProduct1::ProductInfoPropertyChanged);
-    iProductInfo = new PropertyString("ProductInfo", functor);
+    iProductInfo = new PropertyString(aDevice.Device().GetCpStack().Env(), "ProductInfo", functor);
     AddProperty(iProductInfo);
     functor = MakeFunctor(*this, &CpProxyAvOpenhomeOrgProduct1::ProductUrlPropertyChanged);
-    iProductUrl = new PropertyString("ProductUrl", functor);
+    iProductUrl = new PropertyString(aDevice.Device().GetCpStack().Env(), "ProductUrl", functor);
     AddProperty(iProductUrl);
     functor = MakeFunctor(*this, &CpProxyAvOpenhomeOrgProduct1::ProductImageUriPropertyChanged);
-    iProductImageUri = new PropertyString("ProductImageUri", functor);
+    iProductImageUri = new PropertyString(aDevice.Device().GetCpStack().Env(), "ProductImageUri", functor);
     AddProperty(iProductImageUri);
     functor = MakeFunctor(*this, &CpProxyAvOpenhomeOrgProduct1::StandbyPropertyChanged);
-    iStandby = new PropertyBool("Standby", functor);
+    iStandby = new PropertyBool(aDevice.Device().GetCpStack().Env(), "Standby", functor);
     AddProperty(iStandby);
     functor = MakeFunctor(*this, &CpProxyAvOpenhomeOrgProduct1::SourceIndexPropertyChanged);
-    iSourceIndex = new PropertyUint("SourceIndex", functor);
+    iSourceIndex = new PropertyUint(aDevice.Device().GetCpStack().Env(), "SourceIndex", functor);
     AddProperty(iSourceIndex);
     functor = MakeFunctor(*this, &CpProxyAvOpenhomeOrgProduct1::SourceCountPropertyChanged);
-    iSourceCount = new PropertyUint("SourceCount", functor);
+    iSourceCount = new PropertyUint(aDevice.Device().GetCpStack().Env(), "SourceCount", functor);
     AddProperty(iSourceCount);
     functor = MakeFunctor(*this, &CpProxyAvOpenhomeOrgProduct1::SourceXmlPropertyChanged);
-    iSourceXml = new PropertyString("SourceXml", functor);
+    iSourceXml = new PropertyString(aDevice.Device().GetCpStack().Env(), "SourceXml", functor);
     AddProperty(iSourceXml);
     functor = MakeFunctor(*this, &CpProxyAvOpenhomeOrgProduct1::AttributesPropertyChanged);
-    iAttributes = new PropertyString("Attributes", functor);
+    iAttributes = new PropertyString(aDevice.Device().GetCpStack().Env(), "Attributes", functor);
     AddProperty(iAttributes);
 }
 

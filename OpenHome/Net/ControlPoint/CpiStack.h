@@ -8,29 +8,32 @@
 #define HEADER_CPI_STACK
 
 #include <OpenHome/OhNetTypes.h>
-#include <OpenHome/Net/Private/Stack.h>
-#include <OpenHome/Net/Private/CpiService.h>
-#include <OpenHome/Net/Private/XmlFetcher.h>
-#include <OpenHome/Net/Private/CpiSubscription.h>
-#include <OpenHome/Net/Private/CpiDevice.h>
+#include <OpenHome/Private/Env.h>
+#include <OpenHome/Private/Standard.h>
 
 #include <vector>
 
 namespace OpenHome {
 namespace Net {
 
-class CpiStack : public IStack
+class InvocationManager;
+class XmlFetchManager;
+class CpiSubscriptionManager;
+class CpiDeviceListUpdater;
+
+class CpStack : public IStack, private INonCopyable
 {
 public:
-    CpiStack();
-    static OpenHome::Net::InvocationManager& InvocationManager();
-    static OpenHome::Net::XmlFetchManager& XmlFetchManager();
-    static CpiSubscriptionManager& SubscriptionManager();
-    static CpiDeviceListUpdater& DeviceListUpdater();
+    CpStack(Environment& aEnv);
+    Environment& Env() { return iEnv; }
+    OpenHome::Net::InvocationManager& InvocationManager();
+    OpenHome::Net::XmlFetchManager& XmlFetchManager();
+    CpiSubscriptionManager& SubscriptionManager();
+    CpiDeviceListUpdater& DeviceListUpdater();
 private:
-    ~CpiStack();
-    static CpiStack* Self();
+    ~CpStack();
 private:
+    OpenHome::Environment& iEnv;
     OpenHome::Net::InvocationManager* iInvocationManager;
     OpenHome::Net::XmlFetchManager* iXmlFetchManager;
     CpiSubscriptionManager* iSubscriptionManager;

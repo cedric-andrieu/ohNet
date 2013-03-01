@@ -6,11 +6,12 @@
 #include <OpenHome/Net/Core/OhNet.h>
 #include <OpenHome/Private/Ascii.h>
 #include <OpenHome/Private/Maths.h>
-#include <OpenHome/Net/Private/Stack.h>
+#include <OpenHome/Private/Env.h>
 #include <OpenHome/MimeTypes.h>
+#include <OpenHome/Net/Private/Globals.h>
+#include <OpenHome/Private/File.h>
 
 #include <vector>
-#include <sys/stat.h>
 
 using namespace OpenHome;
 using namespace OpenHome::Net;
@@ -218,11 +219,11 @@ static void RandomiseUdn(Bwh& aUdn)
     aUdn.Grow(aUdn.Bytes() + 1 + Ascii::kMaxUintStringBytes + 1);
     aUdn.Append('-');
     Bws<Ascii::kMaxUintStringBytes> buf;
-    std::vector<NetworkAdapter*>* subnetList = Stack::NetworkAdapterList().CreateSubnetList();
+    std::vector<NetworkAdapter*>* subnetList = gEnv->NetworkAdapterList().CreateSubnetList();
     TUint max = (*subnetList)[0]->Address();
-    TUint seed = DviStack::ServerUpnp().Port((*subnetList)[0]->Address());
+    TUint seed = gDvStack->ServerUpnp().Port((*subnetList)[0]->Address());
     SetRandomSeed(seed);
-    Stack::NetworkAdapterList().DestroySubnetList(subnetList);
+    gEnv->NetworkAdapterList().DestroySubnetList(subnetList);
     (void)Ascii::AppendDec(buf, Random(max));
     aUdn.Append(buf);
     aUdn.PtrZ();
@@ -239,7 +240,7 @@ DeviceLights::DeviceLights(TUint aMode, const Brx& aConfigDir)
     : iConfigDir(aConfigDir)
 {
     RandomiseUdn(gDeviceName);
-    iDevice = new DvDeviceStandard(gDeviceName, *this);
+    iDevice = new DvDeviceStandard(*gDvStack, gDeviceName, *this);
     iDevice->SetAttribute("Upnp.Domain", "openhome.org");
     iDevice->SetAttribute("Upnp.Type", "TestLights");
     iDevice->SetAttribute("Upnp.Version", "1");
@@ -278,16 +279,18 @@ void DeviceLights::WriteResource(const Brx& aUriTail, TIpAddress /*aInterface*/,
     filePath.Append(file);
     filePath.PtrZ();
 
+    IFile* filePtr = NULL;
+
     const char* path = (const char*)filePath.Ptr();
-    FILE* fd = fopen(path, "rb");
-    if (fd == NULL) {
+    try {
+        filePtr = IFile::Open(path, eFileReadOnly);
+    }
+    catch ( FileOpenError ) {
         return;
     }
+
     static const TUint kMaxReadSize = 4096;
-    struct stat fileStats;
-    (void)stat(path, &fileStats);
-    TUint bytes = (TUint)fileStats.st_size;
-    //Print("File %s size is %u\n", path, bytes);
+    TUint bytes = filePtr->Bytes();
     const char* mime = NULL;
     for (TUint i=filePath.Bytes()-1; i>0; i--) {
         if (filePath[i] == '/' || filePath[i] == '\\') {
@@ -320,17 +323,15 @@ void DeviceLights::WriteResource(const Brx& aUriTail, TIpAddress /*aInterface*/,
     Print("selected mime %s\n", mime);
     aResourceWriter.WriteResourceBegin(bytes, mime);
     do {
-        TByte buf[kMaxReadSize];
+        Bws<kMaxReadSize> buf;
         TUint size = (bytes<kMaxReadSize? bytes : kMaxReadSize);
-        size_t records_read = fread(buf, size, 1, fd);
-        ASSERT(records_read == 1);
-
-        aResourceWriter.WriteResource(buf, size);
+        filePtr->Read(buf, size);
+        ASSERT(buf.Bytes() == size);
+        aResourceWriter.WriteResource(buf.Ptr(), buf.Bytes());
         bytes -= size;
-        //Print("Written %u, remaining %u\n", size, bytes);
     } while (bytes > 0);
     aResourceWriter.WriteResourceEnd();
-    (void)fclose(fd);
+    delete filePtr;
 }
 
 

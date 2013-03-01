@@ -10,7 +10,7 @@
 #include <OpenHome/Net/Core/CpDeviceUpnp.h>
 #include <OpenHome/Private/Ascii.h>
 #include <OpenHome/Private/Maths.h>
-#include <OpenHome/Net/Private/Stack.h>
+#include <OpenHome/Private/Env.h>
 #include <OpenHome/Net/Private/DviStack.h>
 
 #include <vector>
@@ -135,15 +135,15 @@ void CpDevices::Removed(CpDevice& /*aDevice*/)
 }
 
 
-void TestDvInvocation()
+void TestDvInvocation(CpStack& aCpStack, DvStack& aDvStack)
 {
-    InitialisationParams& initParams = Stack::InitParams();
+    InitialisationParams& initParams = aDvStack.Env().InitParams();
     TUint oldMsearchTime = initParams.MsearchTimeSecs();
     initParams.SetMsearchTime(1);
     Print("TestDvInvocation - starting\n");
 
     Semaphore* sem = new Semaphore("SEM1", 0);
-    DeviceBasic* device = new DeviceBasic;
+    DeviceBasic* device = new DeviceBasic(aDvStack);
     CpDevices* deviceList = new CpDevices(*sem, device->Udn());
     FunctorCpDevice added = MakeFunctorCpDevice(*deviceList, &CpDevices::Added);
     FunctorCpDevice removed = MakeFunctorCpDevice(*deviceList, &CpDevices::Removed);
@@ -151,7 +151,7 @@ void TestDvInvocation()
     Brn serviceType("TestBasic");
     TUint ver = 1;
     CpDeviceListUpnpServiceType* list =
-                new CpDeviceListUpnpServiceType(domainName, serviceType, ver, added, removed);
+                new CpDeviceListUpnpServiceType(aCpStack, domainName, serviceType, ver, added, removed);
     sem->Wait(30*1000); // allow up to 30 seconds to find our one device
     delete sem;
     deviceList->Test();

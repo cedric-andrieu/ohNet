@@ -8,7 +8,6 @@
 
 EXCEPTION(ThreadKill);
 EXCEPTION(Timeout);
-EXCEPTION(ThreadUnknown);
 
 namespace OpenHome {
 
@@ -130,6 +129,12 @@ public:
      * Query whether the platform port supports thread priorities
      */
     static TBool SupportsPriorities();
+
+    /**
+     * If current thread is an OpenHome thread, and Kill() has been called, then
+     * throw ThreadKill.
+     */
+    static void CheckCurrentForKill();
 
     /**
      * Mark a thread as to be killed.  The thread will not exit immediately

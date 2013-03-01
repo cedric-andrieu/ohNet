@@ -1,5 +1,5 @@
 #include <OpenHome/Net/Private/DviStack.h>
-#include <OpenHome/Net/Private/Stack.h>
+#include <OpenHome/Private/Env.h>
 #include <OpenHome/Net/Private/DviServerUpnp.h>
 #include <OpenHome/Net/Private/DviDevice.h>
 #include <OpenHome/Net/Private/DviSubscription.h>
@@ -12,26 +12,27 @@
 using namespace OpenHome;
 using namespace OpenHome::Net;
 
-// DviStack
+// DvStack
 
-DviStack::DviStack()
-    : iBootId(1)
+DvStack::DvStack(OpenHome::Environment& aEnv)
+    : iEnv(aEnv)
+    , iBootId(1)
     , iNextBootId(2)
     , iMdns(NULL)
 {
-    Stack::SetDviStack(this);
-    iPropertyUpdateCollection = new DviPropertyUpdateCollection();
-    TUint port = Stack::InitParams().DvUpnpServerPort();
-    iDviServerUpnp = new DviServerUpnp(port);
+    iEnv.SetDvStack(this);
+    iPropertyUpdateCollection = new DviPropertyUpdateCollection(*this);
+    TUint port = iEnv.InitParams().DvUpnpServerPort();
+    iDviServerUpnp = new DviServerUpnp(*this, port);
     iDviDeviceMap = new DviDeviceMap;
-    iSubscriptionManager = new DviSubscriptionManager;
-    iDviServerWebSocket = new DviServerWebSocket;
-    if (Stack::InitParams().DvIsBonjourEnabled()) {
-        iMdns = new OpenHome::Net::MdnsProvider(""); // replace this to allow clients to set an alternative Bonjour implementation
+    iSubscriptionManager = new DviSubscriptionManager(*this);
+    iDviServerWebSocket = new DviServerWebSocket(*this);
+    if (iEnv.InitParams().DvIsBonjourEnabled()) {
+        iMdns = new OpenHome::Net::MdnsProvider(iEnv, ""); // replace this to allow clients to set an alternative Bonjour implementation
     }
 }
 
-DviStack::~DviStack()
+DvStack::~DvStack()
 {
     delete iMdns;
     delete iDviServerWebSocket;
@@ -41,67 +42,54 @@ DviStack::~DviStack()
     delete iPropertyUpdateCollection;
 }
 
-TUint DviStack::BootId()
+TUint DvStack::BootId()
 {
-    OpenHome::Mutex& lock = Stack::Mutex();
+    OpenHome::Mutex& lock = iEnv.Mutex();
     lock.Wait();
-    DviStack* self = DviStack::Self();
-    TUint id = self->iBootId;
+    TUint id = iBootId;
     lock.Signal();
     return id;
 }
 
-TUint DviStack::NextBootId()
+TUint DvStack::NextBootId()
 {
-    OpenHome::Mutex& lock = Stack::Mutex();
+    OpenHome::Mutex& lock = iEnv.Mutex();
     lock.Wait();
-    DviStack* self = DviStack::Self();
-    TUint id = self->iNextBootId;
+    TUint id = iNextBootId;
     lock.Signal();
     return id;
 }
 
-void DviStack::UpdateBootId()
+void DvStack::UpdateBootId()
 {
-    OpenHome::Mutex& lock = Stack::Mutex();
+    OpenHome::Mutex& lock = iEnv.Mutex();
     lock.Wait();
-    DviStack* self = DviStack::Self();
-    self->iBootId = self->iNextBootId;
-    self->iNextBootId++;
+    iBootId = iNextBootId;
+    iNextBootId++;
     lock.Signal();
 }
 
-DviServerUpnp& DviStack::ServerUpnp()
+DviServerUpnp& DvStack::ServerUpnp()
 {
-    DviStack* self = DviStack::Self();
-    return *(self->iDviServerUpnp);
+    return *iDviServerUpnp;
 }
 
-DviDeviceMap& DviStack::DeviceMap()
+DviDeviceMap& DvStack::DeviceMap()
 {
-    DviStack* self = DviStack::Self();
-    return *(self->iDviDeviceMap);
+    return *iDviDeviceMap;
 }
 
-DviSubscriptionManager& DviStack::SubscriptionManager()
+DviSubscriptionManager& DvStack::SubscriptionManager()
 {
-    DviStack* self = DviStack::Self();
-    return *(self->iSubscriptionManager);
+    return *iSubscriptionManager;
 }
 
-IMdnsProvider* DviStack::MdnsProvider()
+IMdnsProvider* DvStack::MdnsProvider()
 {
-    DviStack* self = DviStack::Self();
-    return self->iMdns;
+    return iMdns;
 }
 
-DviPropertyUpdateCollection& DviStack::PropertyUpdateCollection()
+DviPropertyUpdateCollection& DvStack::PropertyUpdateCollection()
 {
-    DviStack* self = DviStack::Self();
-    return *(self->iPropertyUpdateCollection);
-}
-
-DviStack* DviStack::Self()
-{
-    return (DviStack*)Stack::DviStack();
+    return *iPropertyUpdateCollection;
 }

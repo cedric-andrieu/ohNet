@@ -1,5 +1,5 @@
 #include <OpenHome/Net/Core/OhNet.h>
-#include <OpenHome/Net/Private/Stack.h>
+#include <OpenHome/Private/Env.h>
 #include <OpenHome/Private/Standard.h>
 #include <OpenHome/OsWrapper.h>
 #include <OpenHome/Net/Private/Discovery.h>
@@ -7,6 +7,8 @@
 #include <OpenHome/Private/Printer.h>
 #include <OpenHome/Private/Maths.h>
 #include <OpenHome/MimeTypes.h>
+#include <OpenHome/Private/Timer.h>
+#include <OpenHome/Net/Private/Globals.h>
 
 #include <time.h>
 
@@ -25,48 +27,39 @@ const char kOhNetMimeTypeJpeg[] = "image/jpeg";
 const char kOhNetMimeTypePng[]  = "image/png";
 
 
-// Stack
-
-TUint gStackInitCount = 0;
-Stack* gStack = NULL;
+// Environment
 
 static const TUint kVersionMajor = 1;
 static const TUint kVersionMinor = 0;
 
-Stack::Stack()
-    : iInitParams(NULL)
+Environment::Environment(OsContext* aOsContext)
+    : iOsContext(aOsContext)
+    , iInitParams(NULL)
     , iTimerManager(NULL)
-    , iPublicLock("GMUT")
     , iNetworkAdapterList(NULL)
     , iSequenceNumber(0)
     , iCpStack(NULL)
     , iDvStack(NULL)
-    , iPrivateLock("SOML")
 {
-    ASSERT(gStackInitCount == 0);
-    gStack = this;
-    gStackInitCount++;
+    Construct();
 }
 
-Stack::Stack(InitialisationParams* aInitParams)
-    : iInitParams(aInitParams)
-    , iPublicLock("GMUT")
+Environment::Environment(OsContext* aOsContext, InitialisationParams* aInitParams)
+    : iOsContext(aOsContext)
+    , iInitParams(aInitParams)
     , iNetworkAdapterList(NULL)
     , iSequenceNumber(0)
     , iCpStack(NULL)
     , iDvStack(NULL)
-    , iPrivateLock("SOML")
 {
+    Construct();
     SetAssertHandler(AssertHandlerDefault);
-    ASSERT(gStackInitCount == 0);
-    gStack = this;
-    gStackInitCount++;
     SetRandomSeed((TUint)(time(NULL) % UINT32_MAX));
-    iTimerManager = new OpenHome::TimerManager();
-    iNetworkAdapterList = new OpenHome::NetworkAdapterList(0);
+    iTimerManager = new OpenHome::TimerManager(*this);
+    iNetworkAdapterList = new OpenHome::NetworkAdapterList(*this, 0);
     Functor& subnetListChangeListener = iInitParams->SubnetListChangedListener();
     if (subnetListChangeListener) {
-        iNetworkAdapterList->AddSubnetListChangeListener(subnetListChangeListener);
+        iNetworkAdapterList->AddSubnetListChangeListener(subnetListChangeListener, false);
     }
     FunctorNetworkAdapter &subnetAddedListener = iInitParams->SubnetAddedListener();
     if (subnetAddedListener) {
@@ -82,207 +75,186 @@ Stack::Stack(InitialisationParams* aInitParams)
     }
 }
 
-void Stack::Destroy()
+void Environment::Construct()
 {
-    delete gStack;
+    gEnv = this;
+    iPublicLock = new OpenHome::Mutex("GMUT");
+    iPrivateLock = new OpenHome::Mutex("SOML");
 }
 
-Stack::~Stack()
+Environment::~Environment()
 {
-    ASSERT(gStackInitCount == 1);
-    gStackInitCount = 0;
-    iPublicLock.Wait();
-    iPublicLock.Signal();
+    iPublicLock->Wait();
+    iPublicLock->Signal();
     delete iCpStack;
     delete iDvStack;
     delete iNetworkAdapterList;
     if (iObjectMap.size() != 0) {
         Log::Print("ERROR: destroying stack before some owned objects\n");
         Log::Print("...leaked objects are\n");
-        DoListObjects();
+        ListObjects();
         ASSERTS();
     }
     delete iTimerManager;
     delete iInitParams;
-    gStack = NULL;
+    delete iPublicLock;
+    delete iPrivateLock;
+    Os::Destroy(iOsContext);
 }
 
-TBool Stack::IsInitialised()
-{
-    return (gStack != NULL);
-}
-
-void Stack::GetVersion(TUint& aMajor, TUint& aMinor)
+void Environment::GetVersion(TUint& aMajor, TUint& aMinor)
 {
     aMajor = kVersionMajor;
     aMinor = kVersionMinor;
 }
 
-OpenHome::TimerManager& Stack::TimerManager()
+OpenHome::TimerManager& Environment::TimerManager()
 {
-    return *(gStack->iTimerManager);
+    return *iTimerManager;
 }
 
-OpenHome::Mutex& Stack::Mutex()
+OpenHome::Mutex& Environment::Mutex()
 {
-    return gStack->iPublicLock;
+    return *iPublicLock;
 }
 
-NetworkAdapterList& Stack::NetworkAdapterList()
+OsContext* Environment::OsCtx()
 {
-    return *(gStack->iNetworkAdapterList);
+    return iOsContext;
 }
 
-SsdpListenerMulticast& Stack::MulticastListenerClaim(TIpAddress aInterface)
+NetworkAdapterList& Environment::NetworkAdapterList()
 {
-    AutoMutex a(gStack->iPrivateLock);
-    const TInt count = (TUint)gStack->iMulticastListeners.size();
+    return *iNetworkAdapterList;
+}
+
+Net::SsdpListenerMulticast& Environment::MulticastListenerClaim(TIpAddress aInterface)
+{
+    AutoMutex a(*iPrivateLock);
+    const TInt count = (TUint)iMulticastListeners.size();
     for (TInt i=0; i<count; i++) {
-        Stack::MListener* listener = gStack->iMulticastListeners[i];
+        Environment::MListener* listener = iMulticastListeners[i];
         if (listener->Interface() == aInterface) {
             listener->AddRef();
             return listener->Listener();
         }
     }
     // first request on this interface; create a shared multicast listener for it
-    MListener* listener = new MListener(aInterface);
-    gStack->iMulticastListeners.push_back(listener);
+    MListener* listener = new MListener(*this, aInterface);
+    iMulticastListeners.push_back(listener);
     listener->Listener().Start();
     return listener->Listener();
 }
 
-void Stack::MulticastListenerRelease(TIpAddress aInterface)
+void Environment::MulticastListenerRelease(TIpAddress aInterface)
 {
-    gStack->iPrivateLock.Wait();
-    const TInt count = (TUint)gStack->iMulticastListeners.size();
+    iPrivateLock->Wait();
+    const TInt count = (TUint)iMulticastListeners.size();
     for (TInt i=0; i<count; i++) {
-        Stack::MListener* listener = gStack->iMulticastListeners[i];
+        Environment::MListener* listener = iMulticastListeners[i];
         if (listener->Interface() == aInterface) {
             if (listener->RemoveRef()) {
                 delete listener;
-                gStack->iMulticastListeners.erase(gStack->iMulticastListeners.begin() + i);
+                iMulticastListeners.erase(iMulticastListeners.begin() + i);
                 break;
             }
         }
     }
-    gStack->iPrivateLock.Signal();
+    iPrivateLock->Signal();
 }
 
-TUint Stack::SequenceNumber()
+TUint Environment::SequenceNumber()
 {
-    TUint seq;
-    OpenHome::Mutex& lock = Stack::Mutex();
-    lock.Wait();
-    seq = gStack->iSequenceNumber++;
-    lock.Signal();
+    iPrivateLock->Wait();
+    TUint seq = iSequenceNumber++;
+    iPrivateLock->Signal();
     return seq;
 }
 
-InitialisationParams& Stack::InitParams()
+InitialisationParams& Environment::InitParams()
 {
-    return *(gStack->iInitParams);
+    return *iInitParams;
 }
 
-void Stack::AddObject(IStackObject* aObject)
+void Environment::AddObject(IStackObject* aObject)
 {
-    if (gStack != NULL)  {
-        gStack->DoAddObject(aObject);
-    }
-}
-
-void Stack::RemoveObject(IStackObject* aObject)
-{
-    if (gStack != NULL)  {
-        gStack->DoRemoveObject(aObject);
-    }
-}
-
-void Stack::ListObjects()
-{
-    if (gStack != NULL)  {
-        gStack->DoListObjects();
-    }
-}
-
-void Stack::DoAddObject(IStackObject* aObject)
-{
-    iPrivateLock.Wait();
+    iPrivateLock->Wait();
     ObjectMap::iterator it = iObjectMap.find(aObject);
     ASSERT(it == iObjectMap.end());
     iObjectMap.insert(std::pair<IStackObject*,IStackObject*>(aObject, aObject));
-    iPrivateLock.Signal();
+    iPrivateLock->Signal();
 }
 
-void Stack::DoRemoveObject(IStackObject* aObject)
+void Environment::RemoveObject(IStackObject* aObject)
 {
-    iPrivateLock.Wait();
+    iPrivateLock->Wait();
     ObjectMap::iterator it = iObjectMap.find(aObject);
     if (it != iObjectMap.end()) {
         iObjectMap.erase(it);
     }
-    iPrivateLock.Signal();
+    iPrivateLock->Signal();
 }
 
-void Stack::DoListObjects()
+void Environment::ListObjects()
 {
-    iPrivateLock.Wait();
+    iPrivateLock->Wait();
     ObjectMap::iterator it = iObjectMap.begin();
     while (it != iObjectMap.end()) {
         it->second->ListObjectDetails();
         it++;
     }
-    iPrivateLock.Signal();
+    iPrivateLock->Signal();
 }
 
-void Stack::SetCpiStack(IStack* aStack)
+void Environment::SetCpStack(IStack* aStack)
 {
-    gStack->iCpStack = aStack;
+    iCpStack = aStack;
 }
 
-void Stack::SetDviStack(IStack* aStack)
+void Environment::SetDvStack(IStack* aStack)
 {
-    gStack->iDvStack = aStack;
+    iDvStack = aStack;
 }
 
-IStack* Stack::CpiStack()
+IStack* Environment::CpiStack()
 {
-    return gStack->iCpStack;
+    return iCpStack;
 }
 
-IStack* Stack::DviStack()
+IStack* Environment::DviStack()
 {
-    return gStack->iDvStack;
+    return iDvStack;
 }
 
 
-// Stack::MListener
+// Environment::MListener
 
-Stack::MListener::MListener(TIpAddress aInterface)
-    : iListener(aInterface)
+Environment::MListener::MListener(Environment& aEnv, TIpAddress aInterface)
+    : iListener(aEnv, aInterface)
     , iRefCount(1)
 {
 }
 
-Stack::MListener::~MListener()
+Environment::MListener::~MListener()
 {
 }
 
-SsdpListenerMulticast& Stack::MListener::Listener()
+Net::SsdpListenerMulticast& Environment::MListener::Listener()
 {
     return iListener;
 }
 
-TIpAddress Stack::MListener::Interface() const
+TIpAddress Environment::MListener::Interface() const
 {
     return iListener.Interface();
 }
 
-void Stack::MListener::AddRef()
+void Environment::MListener::AddRef()
 {
     iRefCount++;
 }
 
-TBool Stack::MListener::RemoveRef()
+TBool Environment::MListener::RemoveRef()
 {
     iRefCount--;
     return (iRefCount == 0);

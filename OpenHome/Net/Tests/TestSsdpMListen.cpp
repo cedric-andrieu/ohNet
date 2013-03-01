@@ -3,7 +3,7 @@
 // Test will need to be manually killed if run forever (duration of 0 seconds)
 
 /* Note that selection of network interface has little effect as the listeners
-   in Stack seem to result in multicast messages on any interface being received
+   in Environment seem to result in multicast messages on any interface being received
    on all interfaces for linux-hosted tests.
    CpiDeviceListUpnp works around this so client code is okay.  Be aware of this
    when reviewing test results however. */
@@ -15,7 +15,8 @@
 #include <OpenHome/Net/Private/Discovery.h>
 #include <OpenHome/Private/Thread.h>
 #include <OpenHome/Private/Timer.h>
-#include <OpenHome/Net/Private/Stack.h>
+#include <OpenHome/Private/Env.h>
+#include <OpenHome/Private/NetworkAdapterList.h>
 
 using namespace OpenHome;
 using namespace OpenHome::Net;
@@ -184,26 +185,28 @@ void MSearchLogger::SsdpSearchServiceType(const Endpoint& aEndpoint, TUint aMx, 
 class SuiteListen : public Suite
 {
 public:
-    SuiteListen(TUint aDurationSeconds, TUint aInterfaceIndex);
+    SuiteListen(Environment& aEnv, TUint aDurationSeconds, TUint aInterfaceIndex);
     ~SuiteListen();
     void Test();
 private:
-    static TIpAddress NetworkIf(TUint aIndex);
+    static TIpAddress NetworkIf(Environment& aEnv, TUint aIndex);
     void TimerExpired();
 private:
+    Environment& iEnv;
     Semaphore iSem;
     Timer* iTimer;
     TUint iDuration;
     TUint iInterfaceIndex;
 };
 
-SuiteListen::SuiteListen(TUint aDurationSeconds, TUint aInterfaceIndex)
+SuiteListen::SuiteListen(Environment& aEnv, TUint aDurationSeconds, TUint aInterfaceIndex)
     : Suite("multicast listener")
+    , iEnv(aEnv)
     , iSem("SBLK", 0)
     , iDuration(1000 * aDurationSeconds)
     , iInterfaceIndex(aInterfaceIndex)
 {
-    iTimer = new Timer(MakeFunctor(*this, &SuiteListen::TimerExpired));
+    iTimer = new Timer(aEnv, MakeFunctor(*this, &SuiteListen::TimerExpired));
 }
 
 SuiteListen::~SuiteListen()
@@ -211,9 +214,9 @@ SuiteListen::~SuiteListen()
     delete iTimer;
 }
 
-TIpAddress SuiteListen::NetworkIf(TUint aIndex)
+TIpAddress SuiteListen::NetworkIf(Environment& aEnv, TUint aIndex)
 {
-    const std::vector<NetworkAdapter*>& ifs = Stack::NetworkAdapterList().List();
+    const std::vector<NetworkAdapter*>& ifs = aEnv.NetworkAdapterList().List();
     ASSERT(ifs.size() > 0 && aIndex < ifs.size());
     TIpAddress addr = ifs[aIndex]->Address();
     Endpoint endpt(0, addr);
@@ -228,7 +231,7 @@ void SuiteListen::Test()
 //    Debug::SetLevel(Debug::kSsdpMulticast);
     SsdpNotifyLoggerM notifyLogger;
     MSearchLogger msearchLogger;
-    SsdpListenerMulticast mListener(NetworkIf(iInterfaceIndex));
+    SsdpListenerMulticast mListener(iEnv, NetworkIf(iEnv, iInterfaceIndex));
     TInt notifyId = mListener.AddNotifyHandler(&notifyLogger);
     TInt msearchId = mListener.AddMsearchHandler(&msearchLogger);
     mListener.Start();
@@ -244,7 +247,7 @@ void SuiteListen::TimerExpired()
 }
 
 
-void TestSsdpMListen(const std::vector<Brn>& aArgs)
+void TestSsdpMListen(Environment& aEnv, const std::vector<Brn>& aArgs)
 {
     OptionParser parser;
     OptionUint duration("-d", "--duration", 30, "Number of seconds to listen for.  Defaults to 30");
@@ -256,6 +259,6 @@ void TestSsdpMListen(const std::vector<Brn>& aArgs)
     }
 
     Runner runner("SSDP multicast listener\n");
-    runner.Add(new SuiteListen(duration.Value(), adapter.Value()));
+    runner.Add(new SuiteListen(aEnv, duration.Value(), adapter.Value()));
     runner.Run();
 }

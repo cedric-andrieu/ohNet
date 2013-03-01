@@ -34,9 +34,11 @@ class PostActions():
             print ret
             sys.exit(10)
 
-    def arm_tests(self,type):
+    def arm_tests(self,type,release):
+        # type will be either 'nightly' or 'commit'
+        # release will be either '0' or '1'
         rem = remote()
-        ret = rem.rsync('root','sheeva010.linn.co.uk','Build','~/')
+        ret = rem.rsync('root','sheeva010.linn.co.uk','Build','~/', excludes=['*.o', '*.a', 'Bundles'])
         if ret != 0:
             print ret
             sys.exit(10)
@@ -44,16 +46,18 @@ class PostActions():
         if ret != 0:
             print ret
             sys.exit(10)
+
+        alltests_cmd = 'python AllTests.py -t' # Setup AllTests cmd line to run tests only.
+
         if type == 'nightly':
-            ret = rem.rssh('root','sheeva010.linn.co.uk','python AllTests.py -f -t')            
-            if ret != 0:
-                print ret
-                sys.exit(10)
-        else:
-            ret = rem.rssh('root','sheeva010.linn.co.uk','python AllTests.py -t')
-            if ret != 0:
-                print ret
-                sys.exit(10)        
+            alltests_cmd += ' -f'        # Add 'full test' flag if in nightly-mode
+        if release == '0':
+            alltests_cmd += ' --debug'   # Run binaries residing in Build/Debug instead of Build/Release
+
+        ret = rem.rssh('root','sheeva010.linn.co.uk', alltests_cmd)
+        if ret != 0:
+            print ret
+            sys.exit(10)
     
 class JenkinsBuild():
     def get_options(self):
@@ -64,7 +68,7 @@ class JenkinsBuild():
 
         parser = OptionParser()
         parser.add_option("-p", "--platform", dest="platform",
-            help="Linux-x86, Linux-x64, Windows-x86, Windows-x64, Linux-ARM, Mac-x64")
+            help="Linux-x86, Linux-x64, Windows-x86, Windows-x64, Linux-ARM, Mac-x64, Core-ppc32, Core-armv6")
         parser.add_option("-n", "--nightly",
                   action="store_true", dest="nightly", default=False,
                   help="Perform a nightly build")
@@ -73,8 +77,11 @@ class JenkinsBuild():
           help="publish release")
         parser.add_option("-v", "--version", dest="version",
             help="version number for release")
+        parser.add_option("-j", "--parallel",
+            action="store_true", dest="parallel", default=False,
+            help="Tell AllTests.py to parallelise the build.")
         (self.options, self.args) = parser.parse_args()
-        
+
         # check if env variables are set
         # if they are, ignore what is on the command line.
 
@@ -104,6 +111,8 @@ class JenkinsBuild():
                 'Mac-x86': { 'os': 'macos', 'arch':'x86', 'publish':True, 'system':'Mac'}, # New Jenkins label, matches downstream builds
                 'Linux-ARM': { 'os': 'linux', 'arch': 'armel', 'publish':True, 'system':'Linux'},
                 'iOs-ARM': { 'os': 'macos', 'arch':'armv7', 'publish':True, 'system':'iOs'},
+                'Core-ppc32': { 'os': 'Core', 'arch':'ppc32', 'publish':True, 'system':'Core'},
+                'Core-armv6': { 'os': 'Core', 'arch':'armv6', 'publish':True, 'system':'Core'},
         }
         current_platform = self.options.platform
         self.platform = platforms[current_platform]
@@ -121,6 +130,10 @@ class JenkinsBuild():
             os.environ['CS_PLATFORM'] = 'x64'
         if os_platform == 'linux' and arch == 'armel':
             os.environ['CROSS_COMPILE'] = '/usr/local/arm-2011.09/bin/arm-none-linux-gnueabi-'
+        if os_platform == 'Core' and arch == 'ppc32':
+            os.environ['CROSS_COMPILE'] = '/opt/rtems-4.11/bin/powerpc-rtems4.11-'
+        if os_platform == 'Core' and arch == 'armv6':
+            os.environ['CROSS_COMPILE'] = '/opt/rtems-4.11/bin/arm-rtemseabi4.11-'
 
         self.platform_args = args
 
@@ -135,7 +148,7 @@ class JenkinsBuild():
 
         self.platform_make_args = []
 
-        if arch in ['armel', 'armhf', 'armv7']:
+        if arch in ['armel', 'armhf', 'armv7', 'armv6', 'ppc32']:
             args.append('--buildonly')
         elif arch == 'x64':
             args.append('--native')
@@ -155,10 +168,14 @@ class JenkinsBuild():
             # Overlapping test instances interfere with each other so only run tests for the (assumed more useful) 32-bit build.
             # Temporarily disable all tests on mac as publish jobs hang otherwise
             args.append('--buildonly')
+        if os_platform == 'Core':
+            args.append('--core')
         if nightly == '1':
             args.append('--full')
             if os_platform == 'linux' and arch == 'x86':
                 args.append('--valgrind')    
+        if self.options.parallel:
+            args.append('--parallel')
         self.build_args = args
 
     def do_build(self):
@@ -262,10 +279,10 @@ class JenkinsBuild():
                 postAction.gen_docs()
 
             if os_platform == 'linux' and arch in ['armel', 'armhf']:
-                postAction.arm_tests('nightly')
+                postAction.arm_tests('nightly', release)
         else:
             if os_platform == 'linux' and arch in ['armel', 'armhf']:
-                postAction.arm_tests('commit')    
+                postAction.arm_tests('commit', release)
         if self.platform['publish'] and release == '1':
             self.do_release()
 

@@ -11,7 +11,9 @@
 #include <vector>
 
 namespace OpenHome {
+class Environment;
 namespace Net {
+
 
 // INotifyHandler - called by MulticastListener on receiving an alive or byebye notification
 class ISsdpNotifyHandler
@@ -43,7 +45,7 @@ public:
 class SsdpSocketReader : public SocketUdpMulticast, public IReaderSource
 {
 public:
-    SsdpSocketReader(TIpAddress aInterface, const Endpoint& aMulticast);
+    SsdpSocketReader(Environment& aEnv, TIpAddress aInterface, const Endpoint& aMulticast);
     ~SsdpSocketReader();
     Endpoint Sender() const; // endpoint of the sender to the multicast address
     // IReaderSource
@@ -109,7 +111,7 @@ class SsdpListenerMulticast : public SsdpListener
     typedef std::vector<NotifyHandler*> VectorNotifyHandler;
     typedef std::vector<MsearchHandler*> VectorMsearchHandler;
 public:
-    SsdpListenerMulticast(TIpAddress aInterface);
+    SsdpListenerMulticast(Environment& aEnv, TIpAddress aInterface);
     virtual ~SsdpListenerMulticast();
     TInt AddNotifyHandler(ISsdpNotifyHandler* aNotifyHandler);
     TInt AddMsearchHandler(ISsdpMsearchHandler* aMsearchHandler);
@@ -149,7 +151,7 @@ class SsdpListenerUnicast : public SsdpListener
     static const TUint kMaxBufferBytes = 1024;
     static const TUint kRecvBufBytes = 64 * 1024;
 public:
-    SsdpListenerUnicast(ISsdpNotifyHandler& aNotifyHandler, TIpAddress aInterface);
+    SsdpListenerUnicast(Environment& aEnv, ISsdpNotifyHandler& aNotifyHandler, TIpAddress aInterface);
     ~SsdpListenerUnicast();
     void MsearchRoot();
     void MsearchUuid(const Brx& aUuid);
@@ -160,6 +162,7 @@ private:
     TUint MsearchDurationSeconds() const;
     void Run();
 private:
+    Environment& iEnv;
     ISsdpNotifyHandler& iNotifyHandler;
     SocketUdp iSocket;
     UdpWriter iSocketWriter;

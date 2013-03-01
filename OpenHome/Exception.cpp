@@ -1,9 +1,10 @@
 #include <OpenHome/Exception.h>
 #include <OpenHome/Private/Standard.h>
 #include <OpenHome/OhNetTypes.h>
-#include <OpenHome/Net/Private/Stack.h>
+#include <OpenHome/Private/Env.h>
 #include <OpenHome/Net/Core/OhNet.h>
 #include <OpenHome/OsWrapper.h>
+#include <OpenHome/Net/Private/Globals.h>
 
 #include <stdio.h>
 
@@ -31,12 +32,12 @@ void OpenHome::CallAssertHandler(const TChar* aFile, TUint aLine)
 
 static void CallFatalErrorHandler(const char* aMsg)
 {
-    if (Net::Stack::IsInitialised()) {
-        FunctorMsg& handler = Net::Stack::InitParams().FatalErrorHandler();
-        handler(aMsg);
+    if (gEnv == NULL) {
+        Os::ConsoleWrite(aMsg);
     }
     else {
-        Os::ConsoleWrite(aMsg);
+        FunctorMsg& handler = gEnv->InitParams().FatalErrorHandler();
+        handler(aMsg);
     }
 }
 
@@ -45,7 +46,7 @@ void OpenHome::AssertHandlerDefault(const TChar* aFile, TUint aLine)
     char buf[1024];
     (void)snprintf(buf, sizeof(buf), "Assertion failed.  %s:%lu\n", aFile, (unsigned long)aLine);
     CallFatalErrorHandler(buf);
-    Os::Quit();
+    Os::Quit(OpenHome::gEnv->OsCtx());
 }
 
 static void GetThreadName(Bws<5>& aThName)
@@ -114,14 +115,12 @@ Exception::Exception(const TChar* aMsg, const TChar* aFile, TUint aLine)
     , iLine(aLine)
 {
 #if EXCEPTION_LOGGING_LEVEL > 0
-    Net::Stack::Mutex().Wait();
     Log::Print("THROW %s from %s:%u", aMsg, aFile, aLine);
     Log::Print(" (th=");
     Log::Print(Thread::CurrentThreadName());
     Log::Print(")\n");
-    Net::Stack::Mutex().Signal();
 #endif
-    iStackTrace = Os::StackTraceInitialise();
+    iStackTrace = Os::StackTraceInitialise(OpenHome::gEnv->OsCtx());
 }
 
 const TChar* kUnknown = "Release mode. File/line information unavailable";
@@ -131,14 +130,12 @@ Exception::Exception(const TChar* aMsg)
     , iLine(0)
 {
 #if EXCEPTION_LOGGING_LEVEL > 0
-    Net::Stack::Mutex().Wait();
     Log::Print("THROW %s", aMsg);
     Log::Print(" (th=");
     Log::Print(Thread::CurrentThreadName());
     Log::Print(")\n");
-    Net::Stack::Mutex().Signal();
 #endif
-    iStackTrace = Os::StackTraceInitialise();
+    iStackTrace = Os::StackTraceInitialise(OpenHome::gEnv->OsCtx());
 }
 
 Exception::Exception(const Exception& aException)
