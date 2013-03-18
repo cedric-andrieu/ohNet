@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 proxyCppCore = OpenHome$(dirsep)Net$(dirsep)ControlPoint$(dirsep)Proxies$(dirsep)
 proxyC = OpenHome$(dirsep)Net$(dirsep)Bindings$(dirsep)C$(dirsep)ControlPoint$(dirsep)Proxies$(dirsep)
 proxyCppStd = OpenHome$(dirsep)Net$(dirsep)Bindings$(dirsep)Cpp$(dirsep)ControlPoint$(dirsep)Proxies$(dirsep)
@@ -69,6 +68,11 @@ objects_core = \
 	$(objdir)EventUpnp.$(objext) \
 	$(objdir)Exception.$(objext) \
 	$(objdir)Fifo.$(objext) \
+	$(objdir)File.$(objext) \
+	$(objdir)FileAnsii.$(objext) \
+	$(objdir)FileBrx.$(objext) \
+	$(objdir)FileStream.$(objext) \
+	$(objdir)Globals.$(objext) \
 	$(objdir)Http.$(objext) \
 	$(objdir)DNSCommon.$(objext) \
 	$(objdir)DNSDigest.$(objext) \
@@ -92,6 +96,8 @@ objects_core = \
 	$(objdir)Env.$(objext) \
 	$(objdir)Stream.$(objext) \
 	$(objdir)Subscription.$(objext) \
+	$(objdir)Terminal.$(objext) \
+	$(objdir)TerminalOs.$(objext) \
 	$(objdir)Thread.$(objext) \
 	$(objdir)Timer.$(objext) \
 	$(objdir)Uri.$(objext) \
@@ -127,6 +133,7 @@ headers = \
 	$(inc_build)/OpenHome/Private/Converter.h \
 	$(inc_build)/OpenHome/Private/Debug.h \
 	$(inc_build)/OpenHome/Private/Fifo.h \
+        $(inc_build)/OpenHome/Private/File.h \
 	$(inc_build)/OpenHome/Private/Http.h \
 	$(inc_build)/OpenHome/Private/Maths.h \
 	$(inc_build)/OpenHome/Private/md5.h \
@@ -137,6 +144,7 @@ headers = \
 	$(inc_build)/OpenHome/Private/Queue.h \
 	$(inc_build)/OpenHome/Private/Standard.h \
 	$(inc_build)/OpenHome/Private/Stream.h \
+	$(inc_build)/OpenHome/Private/Terminal.h \
 	$(inc_build)/OpenHome/Private/Thread.h \
 	$(inc_build)/OpenHome/Private/Timer.h \
 	$(inc_build)/OpenHome/Private/Uri.h \
@@ -165,7 +173,7 @@ headers = \
 	$(inc_build)/OpenHome/Net/Private/ProtocolUpnp.h \
 	$(inc_build)/OpenHome/Net/Private/Service.h \
 	$(inc_build)/OpenHome/Net/Private/Ssdp.h \
-	$(inc_build)/OpenHome/Net/Private/Env.h \
+	$(inc_build)/OpenHome/Private/Env.h \
 	$(inc_build)/OpenHome/Net/Private/Subscription.h \
 	$(inc_build)/OpenHome/Net/Private/XmlFetcher.h \
 	$(inc_build)/OpenHome/Net/Private/XmlParser.h \
@@ -308,6 +316,14 @@ $(objdir)Exception.$(objext) : OpenHome/Exception.cpp $(headers)
 	$(compiler)Exception.$(objext) -c $(cflags) $(includes) OpenHome/Exception.cpp
 $(objdir)Fifo.$(objext) : OpenHome/Fifo.cpp $(headers)
 	$(compiler)Fifo.$(objext) -c $(cflags) $(includes) OpenHome/Fifo.cpp
+$(objdir)FileAnsii.$(objext) : OpenHome/FileAnsii.cpp $(headers)
+	$(compiler)FileAnsii.$(objext) -c $(cflags) $(includes) OpenHome/FileAnsii.cpp
+$(objdir)FileBrx.$(objext) : OpenHome/FileBrx.cpp $(headers)
+	$(compiler)FileBrx.$(objext) -c $(cflags) $(includes) OpenHome/FileBrx.cpp
+$(objdir)FileStream.$(objext) : OpenHome/FileStream.cpp $(headers)
+	$(compiler)FileStream.$(objext) -c $(cflags) $(includes) OpenHome/FileStream.cpp
+$(objdir)Globals.$(objext) : OpenHome/Net/Globals.cpp $(headers)
+	$(compiler)Globals.$(objext) -c $(cflags) $(includes) OpenHome/Net/Globals.cpp
 $(objdir)Http.$(objext) : OpenHome/Http.cpp $(headers)
 	$(compiler)Http.$(objext) -c $(cflags) $(includes) OpenHome/Http.cpp
 $(objdir)DNSCommon.$(objext) : OpenHome/Net/Device/Bonjour/mDNSCore/DNSCommon.c $(headers)
@@ -348,12 +364,14 @@ $(objdir)Ssdp.$(objext) : OpenHome/Net/Ssdp.cpp $(headers)
 	$(compiler)Ssdp.$(objext) -c $(cflags) $(includes) OpenHome/Net/Ssdp.cpp
 $(objdir)SsdpDv.$(objext) : OpenHome/Net/SsdpDv.cpp $(headers)
 	$(compiler)SsdpDv.$(objext) -c $(cflags) $(includes) OpenHome/Net/SsdpDv.cpp
-$(objdir)Stack.$(objext) : OpenHome/Net/Env.cpp $(headers)
-	$(compiler)Env.$(objext) -c $(cflags) $(includes) OpenHome/Net/Env.cpp
+$(objdir)Env.$(objext) : OpenHome/Env.cpp $(headers)
+	$(compiler)Env.$(objext) -c $(cflags) $(includes) OpenHome/Env.cpp
 $(objdir)Stream.$(objext) : OpenHome/Stream.cpp $(headers)
 	$(compiler)Stream.$(objext) -c $(cflags) $(includes) OpenHome/Stream.cpp
 $(objdir)Subscription.$(objext) : OpenHome/Net/Subscription.cpp $(headers)
 	$(compiler)Subscription.$(objext) -c $(cflags) $(includes) OpenHome/Net/Subscription.cpp
+$(objdir)Terminal.$(objext) : OpenHome/Terminal.cpp $(headers)
+	$(compiler)Terminal.$(objext) -c $(cflags) $(includes) OpenHome/Terminal.cpp
 $(objdir)Thread.$(objext) : OpenHome/Thread.cpp $(headers)
 	$(compiler)Thread.$(objext) -c $(cflags) $(includes) OpenHome/Thread.cpp
 $(objdir)Timer.$(objext) : OpenHome/Timer.cpp $(headers)
@@ -384,6 +402,10 @@ $(objdir)OsWrapper.$(objext) : Os/OsWrapper.cpp $(headers)
 	$(compiler)OsWrapper.$(objext) -c $(cflags) $(includes) Os/OsWrapper.cpp
 $(objdir)Os.$(objext) : Os/$(osdir)/Os.c $(headers)
 	$(compiler)Os.$(objext) -c $(cflags) $(includes) Os/$(osdir)/Os.c
+$(objdir)File.$(objext) : Os/$(osdir)/File.cpp $(headers)
+	$(compiler)File.$(objext) -c $(cflags) $(includes) Os/$(osdir)/File.cpp
+$(objdir)TerminalOs.$(objext) : Os/$(osdir)/TerminalOs.cpp $(headers)
+	$(compiler)TerminalOs.$(objext) -c $(cflags) $(includes) Os/$(osdir)/TerminalOs.cpp
 
 
 ohNetDll: ohNetCore
@@ -413,6 +435,14 @@ $(objdir)TestBuffer.$(objext) : OpenHome/Tests/TestBuffer.cpp $(headers)
 	$(compiler)TestBuffer.$(objext) -c $(cflags) $(includes) OpenHome/Tests/TestBuffer.cpp
 $(objdir)TestBufferMain.$(objext) : OpenHome/Tests/TestBufferMain.cpp $(headers)
 	$(compiler)TestBufferMain.$(objext) -c $(cflags) $(includes) OpenHome/Tests/TestBufferMain.cpp
+
+TestFile: $(objdir)TestFile.$(exeext) 
+$(objdir)TestFile.$(exeext) :  ohNetCore $(objdir)TestFile.$(objext) $(objdir)TestFileMain.$(objext) $(libprefix)TestFramework.$(libext)
+	$(link) $(linkoutput)$(objdir)TestFile.$(exeext) $(objdir)TestFileMain.$(objext) $(objdir)TestFile.$(objext) $(objdir)$(libprefix)TestFramework.$(libext) $(objdir)$(libprefix)ohNetCore.$(libext)
+$(objdir)TestFile.$(objext) : OpenHome/Tests/TestFile.cpp $(headers)
+	$(compiler)TestFile.$(objext) -c $(cflags) $(includes) OpenHome/Tests/TestFile.cpp
+$(objdir)TestFileMain.$(objext) : OpenHome/Tests/TestFileMain.cpp $(headers)
+	$(compiler)TestFileMain.$(objext) -c $(cflags) $(includes) OpenHome/Tests/TestFileMain.cpp
 
 TestThread: $(objdir)TestThread.$(exeext) 
 $(objdir)TestThread.$(exeext) :  ohNetCore $(objdir)TestThread.$(objext) $(objdir)TestThreadMain.$(objext) $(libprefix)TestFramework.$(libext)
@@ -662,18 +692,18 @@ $(objdir)TestPerformanceCp.$(exeext) :  ohNetCore $(objdir)TestPerformanceCp.$(o
 $(objdir)TestPerformanceCp.$(objext) : OpenHome/Net/Bindings/Cpp/ControlPoint/Tests/TestPerformanceCp.cpp $(headers)
 	$(compiler)TestPerformanceCp.$(objext) -c $(cflags) $(includes) OpenHome/Net/Bindings/Cpp/ControlPoint/Tests/TestPerformanceCp.cpp
 
-TestShell: $(objdir)TestShell.$(exeext) 
-$(objdir)TestShell.$(exeext) :  Shell ShellCommandRun $(objdir)TestShell.$(objext) $(libprefix)TestFramework.$(libext)
-	$(link) $(linkoutput)$(objdir)TestShell.$(exeext) $(objdir)TestShell.$(objext) $(objdir)Shell.$(libext) $(objdir)ShellCommandRun.$(objext) $(objdir)ohNetTestsCore.$(libext) $(objdir)$(libprefix)TestFramework.$(libext) $(objdir)$(libprefix)ohNetCore.$(libext)
+TestShell: $(objdir)TestShell.$(exeext)
+$(objdir)TestShell.$(exeext) :  Shell ShellCommandRun $(objdir)TestShell.$(objext) $(libprefix)TestFramework.$(libext) TestsCore
+	$(link) $(linkoutput)$(objdir)TestShell.$(exeext) $(objdir)TestShell.$(objext) $(objdir)$(libprefix)Shell.$(libext) $(objdir)ohNetTestsCore.$(libext) $(objdir)$(libprefix)TestFramework.$(libext) $(objdir)$(libprefix)ohNetCore.$(libext)
 $(objdir)TestShell.$(objext) : OpenHome/Net/Shell/TestShell.cpp $(headers)
 	$(compiler)TestShell.$(objext) -c $(cflags) $(includes) OpenHome/Net/Shell/TestShell.cpp
 
-Shell: ohNetCore $(objdir)Shell.$(objext) ShellCommandDebug
-	$(ar)Shell.$(libext) $(objdir)Shell.$(objext) $(objdir)ShellCommandDebug.$(objext)
+Shell: ohNetCore $(objdir)Shell.$(objext) ShellCommandDebug ShellCommandQuit ShellCommandRun ShellCommandWatchDog
+	$(ar)$(libprefix)Shell.$(libext) $(objdir)Shell.$(objext) $(objdir)ShellCommandDebug.$(objext) $(objdir)ShellCommandQuit.$(objext) $(objdir)ShellCommandRun.$(objext) $(objdir)ShellCommandWatchDog.$(objext)
 $(objdir)Shell.$(objext) : OpenHome/Net/Shell/Shell.cpp $(headers)
 	$(compiler)Shell.$(objext) -c $(cflags) $(includes) OpenHome/Net/Shell/Shell.cpp
 
-ShellCommandRun: $(objdir)ShellCommandRun.$(objext) TestsCore
+ShellCommandRun: $(objdir)ShellCommandRun.$(objext)
 $(objdir)ShellCommandRun.$(objext) : OpenHome/Net/Shell/ShellCommandRun.cpp $(headers)
 	$(compiler)ShellCommandRun.$(objext) -c $(cflags) $(includes) OpenHome/Net/Shell/ShellCommandRun.cpp
 
@@ -681,10 +711,20 @@ ShellCommandDebug: $(objdir)ShellCommandDebug.$(objext)
 $(objdir)ShellCommandDebug.$(objext) : OpenHome/Net/Shell/ShellCommandDebug.cpp $(headers)
 	$(compiler)ShellCommandDebug.$(objext) -c $(cflags) $(includes) OpenHome/Net/Shell/ShellCommandDebug.cpp
 
+ShellCommandQuit: $(objdir)ShellCommandQuit.$(objext)
+$(objdir)ShellCommandQuit.$(objext) : OpenHome/Net/Shell/ShellCommandQuit.cpp $(headers)
+	$(compiler)ShellCommandQuit.$(objext) -c $(cflags) $(includes) OpenHome/Net/Shell/ShellCommandQuit.cpp
+
+ShellCommandWatchDog: $(objdir)ShellCommandWatchDog.$(objext)
+$(objdir)ShellCommandWatchDog.$(objext) : OpenHome/Net/Shell/ShellCommandWatchDog.cpp $(headers)
+	$(compiler)ShellCommandWatchDog.$(objext) -c $(cflags) $(includes) OpenHome/Net/Shell/ShellCommandWatchDog.cpp
+
+
 tests_core = \
 	$(objdir)TestBuffer.$(objext) \
 	$(objdir)TestThread.$(objext) \
 	$(objdir)TestFifo.$(objext) \
+	$(objdir)TestFile.$(objext) \
 	$(objdir)TestQueue.$(objext) \
 	$(objdir)TestTextUtils.$(objext) \
 	$(objdir)TestNetwork.$(objext) \
@@ -700,14 +740,14 @@ tests_core = \
 	$(objdir)TestDviDeviceList.$(objext) \
 	$(objdir)TestDvInvocation.$(objext) \
 	$(objdir)TestDvSubscription.$(objext) \
-    $(objdir)TestBasicDvCore.$(objext) \
+	$(objdir)TestBasicDvCore.$(objext) \
 	$(objdir)DvOpenhomeOrgTestBasic1.$(objext) \
 	$(objdir)CpOpenhomeOrgTestBasic1.$(objext)
 
 TestsCore: $(tests_core)
 	$(ar)ohNetTestsCore.$(libext) $(tests_core)
 
-TestsNative: TestBuffer TestThread TestFifo TestQueue TestTextUtils TestMulticast TestNetwork TestEcho TestTimer TestSsdpMListen TestSsdpUListen TestDeviceList TestDeviceListStd TestDeviceListC TestInvocation TestInvocationStd TestSubscription TestProxyC TestDviDiscovery TestDviDeviceList TestDvInvocation TestDvSubscription TestDvLights TestDvTestBasic TestAdapterChange TestDeviceFinder TestDvDeviceStd TestDvDeviceC TestCpDeviceDv TestCpDeviceDvStd TestCpDeviceDvC TestShell
+TestsNative: TestBuffer TestThread TestFifo TestFile TestQueue TestTextUtils TestMulticast TestNetwork TestEcho TestTimer TestSsdpMListen TestSsdpUListen TestDeviceList TestDeviceListStd TestDeviceListC TestInvocation TestInvocationStd TestSubscription TestProxyC TestDviDiscovery TestDviDeviceList TestDvInvocation TestDvSubscription TestDvLights TestDvTestBasic TestAdapterChange TestDeviceFinder TestDvDeviceStd TestDvDeviceC TestCpDeviceDv TestCpDeviceDvStd TestCpDeviceDvC TestShell
 
 TestsCs: TestProxyCs TestDvDeviceCs TestDvLightsCs TestCpDeviceDvCs TestPerformanceDv TestPerformanceCp TestPerformanceDvCs TestPerformanceCpCs
 
@@ -1006,10 +1046,12 @@ java_classes = \
 	$(objdir)org/openhome/net/core/Action.class \
 	$(objdir)org/openhome/net/core/CombinedStack.class \
 	$(objdir)org/openhome/net/core/ControlPointStack.class \
+    $(objdir)org/openhome/net/core/DebugLevel.class \
 	$(objdir)org/openhome/net/core/DeviceStack.class \
 	$(objdir)org/openhome/net/core/ErrorGeneral.class \
 	$(objdir)org/openhome/net/core/ErrorNetworkAddressInUse.class \
 	$(objdir)org/openhome/net/core/ErrorNoMemory.class \
+    $(objdir)org/openhome/net/core/IMessageListener.class \
 	$(objdir)org/openhome/net/core/InitParams.class \
 	$(objdir)org/openhome/net/core/Library.class \
 	$(objdir)org/openhome/net/core/LibraryException.class \
@@ -1119,6 +1161,8 @@ $(objdir)org/openhome/net/controlpoint/tests/TestProxy.class : $(publicjavadir)o
 	$(javac) -classpath $(publicjavadir) -d $(objdir) $(publicjavadir)org/openhome/net/controlpoint/tests/TestProxy.java
 $(objdir)org/openhome/net/core/Action.class : $(publicjavadir)org/openhome/net/core/Action.java
 	$(javac) -classpath $(publicjavadir) -d $(objdir) $(publicjavadir)org/openhome/net/core/Action.java
+$(objdir)org/openhome/net/core/DebugLevel.class : $(publicjavadir)org/openhome/net/core/DebugLevel.java
+	$(javac) -classpath $(publicjavadir) -d $(objdir) $(publicjavadir)org/openhome/net/core/DebugLevel.java
 $(objdir)org/openhome/net/core/CombinedStack.class : $(publicjavadir)org/openhome/net/core/CombinedStack.java
 	$(javac) -classpath $(publicjavadir) -d $(objdir) $(publicjavadir)org/openhome/net/core/CombinedStack.java
 $(objdir)org/openhome/net/core/ControlPointStack.class : $(publicjavadir)org/openhome/net/core/ControlPointStack.java
@@ -1131,6 +1175,8 @@ $(objdir)org/openhome/net/core/ErrorNetworkAddressInUse.class : $(publicjavadir)
 	$(javac) -classpath $(publicjavadir) -d $(objdir) $(publicjavadir)org/openhome/net/core/ErrorNetworkAddressInUse.java
 $(objdir)org/openhome/net/core/ErrorNoMemory.class : $(publicjavadir)org/openhome/net/core/ErrorNoMemory.java
 	$(javac) -classpath $(publicjavadir) -d $(objdir) $(publicjavadir)org/openhome/net/core/ErrorNoMemory.java
+$(objdir)org/openhome/net/core/IMessageListener.class : $(publicjavadir)org/openhome/net/core/IMessageListener.java
+	$(javac) -classpath $(publicjavadir) -d $(objdir) $(publicjavadir)org/openhome/net/core/IMessageListener.java
 $(objdir)org/openhome/net/core/InitParams.class : $(publicjavadir)org/openhome/net/core/InitParams.java
 	$(javac) -classpath $(publicjavadir) -d $(objdir) $(publicjavadir)org/openhome/net/core/InitParams.java
 $(objdir)org/openhome/net/core/Library.class : $(publicjavadir)org/openhome/net/core/Library.java
@@ -1211,7 +1257,7 @@ $(objdir)ohnet-src.jar :
 	$(jar) $(jarflags) $(objdir)ohnet-src.jar -C $(publicjavadir) .
 
 ohNetAndroidNative : make_obj_dir copy_build_includes ohNetJava
-	cp OpenHome/Net/Bindings/Android/jni/ifaddrs.h $(ANDROID_NDK_ROOT)/platforms/android-3/arch-arm/usr/include/
+	#cp OpenHome/Net/Bindings/Android/jni/ifaddrs.h $(ANDROID_NDK_ROOT)/platforms/android-3/arch-arm/usr/include/
 	$(ANDROID_NDK_ROOT)/ndk-build -C OpenHome/Net/Bindings/Android/jni
 	$(mkdir) $(objdir)Android/libs/armeabi
 	mv OpenHome/Net/Bindings/Android/libs/armeabi/libohNet.so $(objdir)Android/libs/armeabi/
