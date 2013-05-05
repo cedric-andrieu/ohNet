@@ -86,7 +86,7 @@ private:
     static const uint32_t kLogPlainText = 1;
     static const uint32_t kLogHex       = 2;
     uint32_t iLog;
-    mutable Mutex iLogLock;
+    mutable Mutex iLock;
 };
 
 /**
@@ -215,7 +215,11 @@ public:
     ~SocketUdpBase();
 protected:
     SocketUdpBase(Environment& aEnv);
+    void ReCreate();
+private:
+    void Create();
 protected:
+    Environment& iEnv;
     TUint iPort;
 };
 
@@ -225,6 +229,7 @@ public:
     SocketUdp(Environment& aEnv); // lets the os select a port
     SocketUdp(Environment& aEnv, TUint aPort); // stipulate a port
     SocketUdp(Environment& aEnv, TUint aPort, TIpAddress aInterface); // stipulate a port and an interface
+    void ReBind(TUint aPort, TIpAddress aInterface);
 private:
     void Bind(TUint aPort, TIpAddress aInterface);
 };

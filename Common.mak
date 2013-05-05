@@ -56,6 +56,7 @@ objects_core = \
 	$(objdir)DviServerUpnp.$(objext) \
 	$(objdir)DviServerWebSocket.$(objext) \
 	$(objdir)DviService.$(objext) \
+	$(objdir)DviSsdpNotifier.$(objext) \
 	$(objdir)DviStack.$(objext) \
 	$(objdir)DviSubscription.$(objext) \
 	$(objdir)DviPropertyUpdateCollection.$(objext) \
@@ -162,6 +163,7 @@ headers = \
 	$(inc_build)/OpenHome/Net/Private/DviServerUpnp.h \
 	$(inc_build)/OpenHome/Net/Private/DviServerWebSocket.h \
 	$(inc_build)/OpenHome/Net/Private/DviService.h \
+	$(inc_build)/OpenHome/Net/Private/DviSsdpNotifier.h \
 	$(inc_build)/OpenHome/Net/Private/DviStack.h \
 	$(inc_build)/OpenHome/Net/Private/DviSubscription.h \
 	$(inc_build)/OpenHome/Net/Private/DviPropertyUpdateCollection.h \
@@ -292,6 +294,8 @@ $(objdir)DviServerWebSocket.$(objext) : OpenHome/Net/Device/Upnp/DviServerWebSoc
 	$(compiler)DviServerWebSocket.$(objext) -c $(cflags) $(includes) OpenHome/Net/Device/Upnp/DviServerWebSocket.cpp
 $(objdir)DviService.$(objext) : OpenHome/Net/Device/DviService.cpp $(headers)
 	$(compiler)DviService.$(objext) -c $(cflags) $(includes) OpenHome/Net/Device/DviService.cpp
+$(objdir)DviSsdpNotifier.$(objext) : OpenHome/Net/Device/Upnp/DviSsdpNotifier.cpp $(headers)
+	$(compiler)DviSsdpNotifier.$(objext) -c $(cflags) $(includes) OpenHome/Net/Device/Upnp/DviSsdpNotifier.cpp
 $(objdir)DviStack.$(objext) : OpenHome/Net/Device/DviStack.cpp $(headers)
 	$(compiler)DviStack.$(objext) -c $(cflags) $(includes) OpenHome/Net/Device/DviStack.cpp
 $(objdir)DviSubscription.$(objext) : OpenHome/Net/Device/DviSubscription.cpp $(headers)
@@ -1289,4 +1293,5 @@ Generated$(dirsep)Devices.mak : $(tt) OpenHome$(dirsep)Net$(dirsep)Service$(dirs
 native_targets = TestsNative proxies devices
 
 all_targets = $(native_targets) TestsCs CpProxyDotNetAssemblies DvDeviceDotNetAssemblies
+
 
