@@ -1294,4 +1294,3 @@ native_targets = TestsNative proxies devices
 
 all_targets = $(native_targets) TestsCs CpProxyDotNetAssemblies DvDeviceDotNetAssemblies
 
-
