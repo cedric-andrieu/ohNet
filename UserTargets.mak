@@ -10,13 +10,10 @@ clean :
 	$(rmdir) $(inc_build)
 	$(rmdir) $(bundle_build)
 	$(rmdir) Build/Docs
-	$(rmdir) Build
 
-mostlyclean : clean
+mostlyclean : clean clean-t4
 	$(rmdir) Generated
 
 maintainer-clean : mostlyclean
-	$(rmdir) Build/Docs
-	$(rmdir) Build
 
 generate-makefiles : Generated$(dirsep)GenerateSourceFiles.mak Generated$(dirsep)Proxies.mak Generated$(dirsep)Devices.mak

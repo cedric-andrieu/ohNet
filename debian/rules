@@ -23,9 +23,11 @@ export DH_OPTIONS=-v
 	dh $@ 
 
 override_dh_auto_clean:
-	$(MAKE) maintainer-clean
+	if [ -f clean-t4 ]; then $(MAKE) maintainer-clean ; fi
+	rm -rf ./Build
 
 override_dh_auto_build:
+	rm -f Generated/*.mak
 	$(MAKE) generate-makefiles uset4=yes
 	$(MAKE) GenAll uset4=yes
 	$(MAKE) uset4=yes

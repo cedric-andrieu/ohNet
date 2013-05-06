@@ -159,7 +159,7 @@ TBool Endpoint::Equals(const Endpoint& aEndpoint) const
 // Socket
 
 Socket::Socket()
-    : iLogLock("SKLL")
+    : iLock("SKLL")
 {
     iHandle = kHandleNull;
     iLog = kLogNone;
@@ -167,6 +167,7 @@ Socket::Socket()
 
 void Socket::Interrupt(TBool aInterrupt)
 {
+    AutoMutex a(iLock);
     if (iHandle == kHandleNull) {
         return;
     }
@@ -181,12 +182,15 @@ void Socket::Close()
 {
     // close connection and allow caller to handle any exceptions
     LOGF(kNetwork, "Socket::Close H = %d\n", iHandle);
+    iLock.Wait();
     TInt err = OpenHome::Os::NetworkClose(iHandle);
+    THandle handle = iHandle;
+    iHandle = kHandleNull;
+    iLock.Signal();
     if(err != 0) {
-        LOG2F(kNetwork, kError, "Socket::Close H = %d, RETURN VALUE = %d\n", iHandle, err);
+        LOG2F(kNetwork, kError, "Socket::Close H = %d, RETURN VALUE = %d\n", handle, err);
         THROW(NetworkError);
     }
-    iHandle = kHandleNull;
 }
 
 void Socket::SetSendBufBytes(TUint aBytes)
@@ -356,7 +360,7 @@ void Socket::Log(const char* aPrefix, const Brx& aBuffer) const
     if (iLog == kLogNone) {
         return;
     }
-    AutoMutex a(iLogLock);
+    AutoMutex a(iLock);
     if (iLog == kLogPlainText) {
         Log::Print("%s", aPrefix);
         TUint bytes = aBuffer.Bytes();
@@ -677,10 +681,10 @@ SocketTcpSession::~SocketTcpSession()
 // SocketUdpBase
 
 SocketUdpBase::SocketUdpBase(Environment& aEnv)
+    : iEnv(aEnv)
 {
     LOGF(kNetwork, "> SocketUdpBase::SocketUdpBase\n");
-    iHandle = SocketCreate(aEnv, eSocketTypeDatagram);
-    OpenHome::Os::NetworkSocketSetReuseAddress(iHandle);
+    Create();
     LOGF(kNetwork, "< SocketUdpBase::SocketUdpBase H = %d\n", iHandle);
 }
 
@@ -716,6 +720,18 @@ Endpoint SocketUdpBase::Receive(Bwx& aBuffer)
     return endpoint;
 }
 
+void SocketUdpBase::ReCreate()
+{
+    Close();
+    Create();
+}
+
+void SocketUdpBase::Create()
+{
+    iHandle = SocketCreate(iEnv, eSocketTypeDatagram);
+    OpenHome::Os::NetworkSocketSetReuseAddress(iHandle);
+}
+
 
 // SocketUdp
 
@@ -743,6 +759,12 @@ SocketUdp::SocketUdp(Environment& aEnv, TUint aPort, TIpAddress aInterface)
     LOGF(kNetwork, "< SocketUdp::SocketUdp H = %d, P = %d\n", iHandle, iPort);
 }
 
+void SocketUdp::ReBind(TUint aPort, TIpAddress aInterface)
+{
+    ReCreate();
+    Bind(aPort, aInterface);
+}
+
 void SocketUdp::Bind(TUint aPort, TIpAddress aInterface)
 {
     Socket::Bind(Endpoint(aPort, aInterface));
@@ -758,7 +780,11 @@ SocketUdpMulticast::SocketUdpMulticast(Environment& aEnv, TIpAddress aInterface,
     , iAddress(aEndpoint.Address())
 {
     LOGF(kNetwork, "> SocketUdpMulticast::SocketUdpMulticast I = %x, E = %x:%d\n", iInterface, iAddress, iPort);
-    OpenHome::Os::NetworkBindMulticast(iHandle, aInterface, aEndpoint);
+    const TUint err = OpenHome::Os::NetworkBindMulticast(iHandle, aInterface, aEndpoint);
+    if (err != 0) {
+        LOG2(kError, kNetwork, "NetworkBindMulticast for socket %u\n", iHandle);
+        THROW(NetworkError);
+    }
     GetPort(iPort);
     OpenHome::Os::NetworkSocketMulticastAddMembership(iHandle, iInterface, iAddress);
     LOGF(kNetwork, "< SocketUdpMulticast::SocketUdpMulticast H = %d, I = %x, A = %x, P = %d\n", iHandle, iInterface, iAddress, iPort);
