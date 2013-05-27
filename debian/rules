@@ -1,0 +1,56 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Sample debian/rules that uses debhelper.
+# This file was originally written by Joey Hess and Craig Small.
+# As a special exception, when this file is copied by dh-make into a
+# dh-make output file, you may use that output file without restriction.
+# This special exception was added by Craig Small in version 0.37 of dh-make.
+
+#Now running lintian...
+#E: libohnet source: missing-python-build-dependency
+#W: libohnet: extra-license-file usr/share/doc/libohnet/BsdLicense.txt
+#W: libohnet: extra-license-file usr/share/doc/libohnet/License.txt
+#W: libohnet: shlib-without-versioned-soname usr/lib/libohNet.so libohNet.so
+#E: libohnet: postinst-must-call-ldconfig usr/lib/libohNet.so
+#W: libohnet-doc: empty-binary-package
+
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE=1
+export DH_OPTIONS=-v
+#export DH_BUILD_OPTIONS=nocheck
+
+%:
+	dh $@ 
+
+override_dh_auto_clean:
+	if [ -f clean-t4 ]; then $(MAKE) maintainer-clean ; fi
+	rm -rf ./Build
+
+override_dh_auto_build:
+	rm -f Generated/*.mak
+	$(MAKE) generate-makefiles uset4=yes
+	$(MAKE) GenAll uset4=yes
+	$(MAKE) uset4=yes
+	$(MAKE) docs
+
+override_dh_auto_install:
+	$(MAKE) install prefix=$(CURDIR)/debian/tmp/usr
+	mkdir $(CURDIR)/debian/tmp/Bindings
+	cp -r $(CURDIR)/OpenHome/Net/Bindings/* $(CURDIR)/debian/tmp/Bindings
+	find $(CURDIR)/debian/tmp/ -type f -exec chmod 644 '{}' \;
+	find $(CURDIR)/debian/tmp/ -type d -exec chmod 755 '{}' \;
+	mkdir $(CURDIR)/debian/tmp/Docs
+	rm -f $(CURDIR)/Build/Docs/CppCore/jquery.js
+	ln -s /usr/share/javascript/jquery/jquery.js $(CURDIR)/Build/Docs/CppCore/jquery.js
+	rm -f $(CURDIR)/Build/Docs/CppStd/jquery.js
+	ln -s /usr/share/javascript/jquery/jquery.js $(CURDIR)/Build/Docs/CppStd/jquery.js
+	rm -f $(CURDIR)/Build/Docs/Cs/jquery.js
+	ln -s /usr/share/javascript/jquery/jquery.js $(CURDIR)/Build/Docs/Cs/jquery.js
+	rm -f $(CURDIR)/Build/Docs/C/jquery.js
+	ln -s /usr/share/javascript/jquery/jquery.js $(CURDIR)/Build/Docs/C/jquery.js
+	rm -f $(CURDIR)/Build/Docs/Java/jquery.js
+	ln -s /usr/share/javascript/jquery/jquery.js $(CURDIR)/Build/Docs/Java/jquery.js
+	cp -r $(CURDIR)/Build/Docs $(CURDIR)/debian/tmp/
+
+override_dh_auto_test:
+	python AllTests.py --testsonly 
